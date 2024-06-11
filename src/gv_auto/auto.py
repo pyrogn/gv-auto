@@ -196,6 +196,16 @@ class EnvironmentInfo:
 class HeroResponses:
     "Track, wait and listen to reponses"
 
+    def __init__(self, driver):
+        self.driver = driver
+
+    @property
+    def is_responded(self):
+        latest_entry_text = sb.get_text("div.d_msg")
+        if "➥" in latest_entry_text:
+            return True
+        return False
+
 
 class Strategies:
     def __init__(self, hero: HeroActions, env: EnvironmentInfo):
@@ -219,7 +229,9 @@ class Strategies:
 
     def digging(self):
         try:
-            if (self.hero.prana > 5) and (self.env.state in ["Дорога", "Возврат"]):
+            if (self.hero.prana > 5) and (
+                self.env.state in [HeroStates.WALKING, HeroStates.RETURNING]
+            ):
                 self.hero.godvoice(VOICEGOD_TASK.DIG)
                 logging.info("Digging strategy executed.")
         except Exception as e:
