@@ -1,3 +1,4 @@
+from enum import Enum, auto
 import re
 import random
 import logging
@@ -12,25 +13,82 @@ web_page = (Path.cwd() / "pages/in_town.mht").as_uri()
 web_page = "https://godville.net/"
 
 
-class HeroActions:
-    def __init__(self, driver) -> None:
-        self.driver = driver
+class HeroStates(Enum):
+    SLEEPING = auto()
+    WALKING = auto()
+    RETURNING = auto()
+    FISHING = auto()
+    HEALING = auto()
+    FIGHTING = auto()
+    TRADING = auto()
+    LEISURE = auto()
+    ADVENTURE = auto()
+    PRAYING = auto()
 
-    def influence(self, infl_type):
+
+activity_map = {
+    HeroStates.SLEEPING: ["Сон"],
+    HeroStates.WALKING: ["Дорога"],
+    HeroStates.RETURNING: ["Возврат"],
+    HeroStates.HEALING: ["Лечение"],
+    HeroStates.FIGHTING: ["Бой"],
+    HeroStates.TRADING: ["Торговля"],
+    HeroStates.FISHING: ["Рыбалка"],
+    HeroStates.LEISURE: ["Отдых"],
+    HeroStates.ADVENTURE: ["Авантюра"],
+    HeroStates.PRAYING: ["Молитва"],
+}
+str_state2enum_state = {}
+for k, v in activity_map.items():
+    for say in v:
+        str_state2enum_state[say] = k
+
+
+class VOICEGOD_TASK(Enum):
+    FIGHT = auto()
+    HEAL = auto()
+    RETURN = auto()
+    DIG = auto()
+    CANCEL = auto()
+
+
+class INFLUENCE_TYPE(Enum):
+    ENCOURAGE = auto()
+    PUNISH = auto()
+
+
+voicegods_map = {
+    VOICEGOD_TASK.FIGHT: ["Бей"],
+    VOICEGOD_TASK.HEAL: ["Лечись"],
+    VOICEGOD_TASK.RETURN: ["Домой"],
+    VOICEGOD_TASK.DIG: ["Копай клад"],
+    VOICEGOD_TASK.CANCEL: ["Отмени задание"],
+}
+
+
+class HeroTracker:
+    def __init__(self):
+        self.return_counter = 0
+
+
+class HeroActions:
+    def __init__(self, driver, hero_state: HeroTracker) -> None:
+        self.driver = driver
+        self.hs = hero_state
+
+    def influence(self, infl_type: INFLUENCE_TYPE):
         try:
-            if infl_type == "good":
+            if infl_type == INFLUENCE_TYPE.ENCOURAGE:
                 self.driver.click_link("Сделать хорошо")
-                # alternative
-                # self.driver.click("#cntrl1 > a.no_link.div_link.enc_link")
-            elif infl_type == "bad":
+            elif infl_type == INFLUENCE_TYPE.PUNISH:
                 self.driver.click_link("Сделать плохо")
-                # self.driver.click("#cntrl1 > a.no_link.div_link.pun_link")
             logging.info(f"Influence action '{infl_type}' executed successfully.")
         except Exception as e:
             logging.error(f"Error in influence method: {e}")
 
-    def godvoice(self, text):
+    def godvoice(self, say: VOICEGOD_TASK):
         try:
+            text = random.choice(voicegods_map[say])
             self.driver.type("#godvoice", text)
             self.driver.uc_click("#voice_submit")
             logging.info(f"Godvoice command '{text}' executed successfully.")
@@ -51,6 +109,10 @@ class EnvironmentInfo:
         except Exception as e:
             logging.error(f"Error retrieving state: {e}")
             return "Unknown"
+
+    @property
+    def state_enum(self):
+        return str_state2enum_state[self.state]
 
     @property
     def money(self):
@@ -106,7 +168,7 @@ class EnvironmentInfo:
             else:
                 area = self.driver.get_attribute("g.tl.sl title", "textContent")
                 miles = int(re.search(r"\d+", area).group())
-                area = area.split(" ")[0]
+                area = re.search(r"(.+?)\s*\(", area).group(0)
             return miles, area
         except Exception as e:
             logging.error(f"Error retrieving position: {e}")
@@ -142,8 +204,15 @@ class Strategies:
 
     def melt_bricks(self):
         try:
-            if (self.hero.prana > 25) and (self.env.state != "Рыбалка"):
-                self.hero.influence("bad")
+            if (
+                (self.hero.prana > 25)
+                and (
+                    self.env.state_enum
+                    not in [HeroStates.FISHING, HeroStates.ADVENTURE]
+                )
+                and (self.hero.money >= 3000)
+            ):
+                self.hero.influence(INFLUENCE_TYPE.PUNISH)
                 logging.info("Melt bricks strategy executed.")
         except Exception as e:
             logging.error(f"Error in melt_bricks strategy: {e}")
@@ -151,13 +220,18 @@ class Strategies:
     def digging(self):
         try:
             if (self.hero.prana > 5) and (self.env.state in ["Дорога", "Возврат"]):
-                self.hero.godvoice("Копай клад!")
+                self.hero.godvoice(VOICEGOD_TASK.DIG)
                 logging.info("Digging strategy executed.")
         except Exception as e:
             logging.error(f"Error in digging strategy: {e}")
 
     def open_activatables(self):
+        # learn to parse them
         pass
+
+    def return_host(self):
+        pass
+        # also count times during quest
 
 
 if __name__ == "__main__":
@@ -166,6 +240,9 @@ if __name__ == "__main__":
         sb.open(web_page)
         logging.info("Page is loaded")
         env = EnvironmentInfo(sb)
+
+        hs = HeroTracker()
+        hero_actions = HeroActions(sb, hs)
 
         try:
             while True:
