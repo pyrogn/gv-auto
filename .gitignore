@@ -1,0 +1,17 @@
+# python generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# venv
+.venv
+~/Library/Application Support/BraveSoftware/uc
+*.png
+*.jpeg
+*.jpg
+downloaded_files
+chrome_profile
+.DS_Store

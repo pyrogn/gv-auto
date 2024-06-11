@@ -1,0 +1,7 @@
+{
+  "python.analysis.autoImportCompletions": true,
+  "files.exclude": {
+    "**/__pycache__": true,
+    "**/__pycache__.*": true
+  }
+}
