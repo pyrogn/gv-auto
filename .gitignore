@@ -13,5 +13,7 @@ wheels/
 *.jpeg
 *.jpg
 downloaded_files
-chrome_profile
+chrome_profile*
 .DS_Store
+api_key.txt
+.env

@@ -1,7 +1,7 @@
 import re
 import logging
-from gv_auto.states import HeroStates
-from gv_auto.states import str_state2enum_state
+from bs4 import BeautifulSoup
+from gv_auto.states import HeroStates, str_state2enum_state
 
 
 class EnvironmentInfo:
@@ -57,10 +57,19 @@ class EnvironmentInfo:
             return 0
 
     @property
+    def is_in_town(self):
+        where = self._get_text("#hk_distance > div.l_capt")
+        return where == "Город"
+
+    @property
+    def closest_city(self):
+        position, _ = self.position
+        return GameState(self.driver).find_closest_town(position)
+
+    @property
     def position(self):
         try:
-            where = self._get_text("#hk_distance > div.l_capt")
-            is_in_town = where == "Город"
+            is_in_town = self.is_in_town
             miles = self._get_text("#hk_distance > div.l_val")
             if not is_in_town:
                 miles = int(re.search(r"\d+", miles).group())
@@ -85,9 +94,48 @@ class EnvironmentInfo:
             return 0
 
     @property
+    def quest(self):
+        try:
+            quest = self._get_text("#hk_quests_completed > div.q_name")
+            return quest
+        except Exception as e:
+            logging.error(f"Error retrieving inventory: {e}")
+            return ""
+
+    @property
     def all_info(self):
         try:
-            return f"{self.state}|money:{self.money}|prana:{self.prana}|inv:{self.inventory}|bricks:{self.bricks}|hp:{self.health}|where:{','.join(map(str, self.position))}"
+            return f"{self.state}|money:{self.money}|prana:{self.prana}|inv:{self.inventory}|bricks:{self.bricks}|hp:{self.health}|where:{','.join(map(str, self.position))}|city:{self.closest_city}|quest:{self.quest}"
         except Exception as e:
             logging.error(f"Error retrieving all information: {e}")
             return "Error retrieving all information"
+
+
+class GameState:
+    def __init__(self, driver):
+        self.driver = driver
+        self.town_map = self.city_map()
+
+    def city_map(self):
+        html_content = self.driver.get_page_source()
+        soup = BeautifulSoup(html_content, "html.parser")
+        towns = soup.find_all("g", class_="tl")
+        town_map = {}
+
+        for town in towns:
+            title = town.find("title")
+            if title:
+                town_text = title.get_text()
+                match = re.search(r"(.*?) \((\d+)\)", town_text)
+                if match:
+                    town_name = match.group(1)
+                    miles = int(match.group(2))
+                    town_map[miles] = town_name
+        return town_map
+
+    def find_closest_town(self, position):
+        possible_towns = {k: v for k, v in self.town_map.items() if k <= position}
+        if not possible_towns:
+            return "No towns found in range"
+        closest_distance = max(possible_towns.keys())
+        return possible_towns[closest_distance]

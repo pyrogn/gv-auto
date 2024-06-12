@@ -30,4 +30,16 @@ class HeroActions:
 
 class HeroTracker:
     def __init__(self):
-        self.return_counter = 0
+        self._return_counter = 0
+
+    @property
+    def return_counter(self):
+        return self._return_counter
+
+    @return_counter.setter
+    def _(self, val):
+        self._return_counter = val
+
+    def register_quest(self):
+        pass
+        # if quest is new, then we reset return_counter to 0

@@ -1,3 +1,5 @@
+import re
+from bs4 import BeautifulSoup
 from seleniumbase import SB
 from pathlib import Path
 
@@ -5,19 +7,28 @@ web_page = (Path.cwd() / "pages/answered.mht").as_uri()
 
 with SB(uc=True, headless=True, user_data_dir="./chrome_profile") as sb:
     sb.open(web_page)
+    html_content = sb.get_page_source()
+    soup = BeautifulSoup(html_content, "html.parser")
 
-    # Find the diary entries
-    # diary_entries = sb.find_elements(
-    #     "#diary > div.block_content > div > div.d_content > div.d_line"
-    # )
+    towns = soup.find_all("g", class_="tl")
+    for town in towns:
+        title = town.find("title")
+        if title:
+            town_text = title.get_text()
+            match = re.search(r"(.*?) \((\d+)\)", town_text)
 
-    # # Print all found elements (for debugging purposes)
-    # print(diary_entries)
+            if match:
+                town = match.group(1)
+                miles = match.group(2)
+                print(town, miles)
 
-    # Extract the text from the latest (first) diary entry
-    # if diary_entries:
+    # towns = sb.find_elements("g.tl")
+    # # print(towns)
+    # for town in towns:
+    #     title = town.get_attribute("title")
+    #     if title:
+    #         print(title)
+
     latest_entry_text = sb.get_text("div.d_msg")
     print("Latest Diary Entry:", latest_entry_text)
     print("➥" in latest_entry_text)
-    # else:
-    #     print("No diary entries found")
