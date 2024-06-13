@@ -58,6 +58,8 @@ markdown-it-py==3.0.0
 mdurl==0.1.2
     # via markdown-it-py
     # via seleniumbase
+numpy==1.26.4
+    # via pandas
 outcome==1.3.0.post0
     # via seleniumbase
     # via trio
@@ -65,6 +67,8 @@ packaging==24.1
     # via pytest
     # via pytest-rerunfailures
     # via seleniumbase
+pandas==2.2.2
+    # via gv-auto
 parameterized==0.9.0
     # via seleniumbase
 parse==1.20.2
@@ -113,8 +117,12 @@ pytest-rerunfailures==14.0
     # via seleniumbase
 pytest-xdist==3.6.1
     # via seleniumbase
+python-dateutil==2.9.0.post0
+    # via pandas
 python-dotenv==1.0.1
     # via gv-auto
+pytz==2024.1
+    # via pandas
 pyyaml==6.0.1
     # via seleniumbase
 requests==2.31.0
@@ -135,6 +143,7 @@ shellingham==1.5.4
 six==1.16.0
     # via behave
     # via parse-type
+    # via python-dateutil
     # via seleniumbase
 sniffio==1.3.1
     # via seleniumbase
@@ -161,6 +170,8 @@ typing-extensions==4.12.2
     # via selenium
     # via seleniumbase
     # via typer
+tzdata==2024.1
+    # via pandas
 urllib3==2.2.1
     # via requests
     # via selenium
