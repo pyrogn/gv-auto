@@ -1,5 +1,6 @@
 import logging
 import time
+import random
 from dotenv import dotenv_values
 from seleniumbase import SB
 from pathlib import Path
@@ -7,6 +8,49 @@ from gv_auto.environment import EnvironmentInfo
 from gv_auto.hero import HeroActions, HeroTracker
 from gv_auto.strategy import Strategies
 import typer
+
+
+def login(sb, config):
+    sb.uc_open("https://godville.net/")
+    logging.info("Page is loaded")
+
+    url = sb.get_current_url()
+    if "superhero" not in url:
+        sb.type("#username", config["LOGIN"])
+        sb.type("#password", config["PASSWORD"])
+        sb.uc_click('input[value="Войти!"]')
+        logging.info("Trying to log in")
+    url = sb.get_current_url()
+    if "superhero" not in url:
+        logging.error("Login is unsuccessful")
+        return False
+    logging.info("Logged in")
+
+    if sb.is_element_present("a.dm_close"):
+        sb.uc_click("a.dm_close")
+        logging.info("Closed direct message")
+
+    return True
+
+
+def perform_tasks(sb, env, hero_tracker, hero_actions, strategies):
+    n_actions = random.randint(50, 150)
+    logging.info(f"{n_actions} actions will be performed.")
+    check_counter = 0
+    while check_counter < n_actions:
+        if check_counter % 6 == 0:
+            logging.info(env.all_info)
+
+        time.sleep(10)
+        # strategies.check_and_execute()
+        check_counter += 1
+        sb.save_screenshot(str(Path("now.png")))
+
+        url = sb.get_current_url()
+        if "superhero" not in url:
+            logging.error("Are we banned? Check screenshot or use manual mode.")
+            return False
+    return True
 
 
 def main(
@@ -19,58 +63,30 @@ def main(
         level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
     )
 
-    web_page = (Path.cwd() / "pages/walking.mht").as_uri()
-    web_page = "https://godville.net/"
-
     headless = False if manual else headless
 
-    with SB(uc=True, headless2=headless, user_data_dir="./chrome_profile") as sb:
-        logging.info("Driver is launched")
-        sb.uc_open(web_page)
-        logging.info("Page is loaded")
+    while True:
+        with SB(uc=True, headless2=headless, user_data_dir="./chrome_profile") as sb:
+            logging.info("Driver is launched")
 
-        if manual:
-            sb.sleep(10000000)
-            return
+            if not login(sb, config):
+                return
 
-        link = sb.get_current_url()
-        if "superhero" not in link:
-            sb.type("#username", config["LOGIN"])
-            sb.type("#password", config["PASSWORD"])
-            sb.uc_click('input[value="Войти!"]')
-            logging.info("Trying to log in")
-        link = sb.get_current_url()
-        if "superhero" not in link:
-            logging.error("Login is unsuccessful")
-        else:
-            logging.info("Logged in")
+            env = EnvironmentInfo(sb)
+            hero_tracker = HeroTracker()
+            hero_actions = HeroActions(sb, hero_tracker)
+            strategies = Strategies(hero_actions, env)
 
-        # there is also a hint distraction
-        if sb.is_element_present("a.dm_close"):
-            sb.uc_click("a.dm_close")
-            logging.info("Close direct message")
+            if manual:
+                sb.sleep(10000000)
+                return
 
-        env = EnvironmentInfo(sb)
-        hero_tracker = HeroTracker()
-        hero_actions = HeroActions(sb, hero_tracker)
-        strategies = Strategies(hero_actions, env)
+            if not perform_tasks(sb, env, hero_tracker, hero_actions, strategies):
+                return
 
-        try:
-            check_counter = 0
-            while True:
-                if check_counter % 6 == 0:
-                    logging.info(env.all_info)
-                    check_counter = 0
-
-                time.sleep(10)
-                # strategies.check_and_execute()
-                check_counter += 1
-                sb.save_screenshot("now.png")
-
-        except KeyboardInterrupt:
-            logging.info("Script terminated by user.")
-        except Exception as e:
-            logging.error(f"Unexpected error: {e}")
+        random_sleep_time = random.randint(300, 900)
+        logging.info(f"Sleeping for {random_sleep_time} seconds")
+        time.sleep(random_sleep_time)
 
 
 if __name__ == "__main__":

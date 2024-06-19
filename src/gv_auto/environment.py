@@ -100,7 +100,10 @@ class EnvironmentInfo:
     def quest(self):
         try:
             quest = self._get_text("#hk_quests_completed > div.q_name")
-            return quest
+            quest_n = int(
+                self._get_re_from_text("#hk_quests_completed > div.l_val", r"\d+")
+            )
+            return quest_n, quest
         except Exception as e:
             logging.error(f"Error retrieving inventory: {e}")
             return ""
@@ -108,7 +111,7 @@ class EnvironmentInfo:
     @property
     def all_info(self):
         try:
-            return f"{self.state}|money:{self.money}|prana:{self.prana}|inv:{self.inventory}|bricks:{self.bricks}|hp:{self.health}|where:{','.join(map(str, self.position))}|city:{self.closest_city}|quest:{self.quest}"
+            return f"{self.state}|money:{self.money}|prana:{self.prana}|inv:{self.inventory}|bricks:{self.bricks}|hp:{self.health}|where:{','.join(map(str, self.position))}|city:{self.closest_city}|quest:{','.join(map(str, self.quest))}"
         except Exception as e:
             logging.error(f"Error retrieving all information: {e}")
             return "Error retrieving all information"
