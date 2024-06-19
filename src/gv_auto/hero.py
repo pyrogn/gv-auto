@@ -11,10 +11,13 @@ class HeroActions:
     def influence(self, infl_type: INFLUENCE_TYPE):
         try:
             if infl_type == INFLUENCE_TYPE.ENCOURAGE:
-                self.driver.click_link("Сделать хорошо")
+                # self.driver.click_link("Сделать хорошо")
+                self.driver.uc_click("#cntrl1 > a.no_link.div_link.enc_link")
             elif infl_type == INFLUENCE_TYPE.PUNISH:
-                self.driver.click_link("Сделать плохо")
+                # self.driver.click_link("Сделать плохо")
+                self.driver.uc_click("#cntrl1 > a.no_link.div_link.pun_link")
             logging.info(f"Influence action '{infl_type}' executed successfully.")
+            # "#cntrl1 > a:nth-child(3)" # revive
         except Exception as e:
             logging.error(f"Error in influence method: {e}")
 
