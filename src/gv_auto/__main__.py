@@ -8,6 +8,7 @@ from gv_auto.environment import EnvironmentInfo
 from gv_auto.hero import HeroActions, HeroTracker
 from gv_auto.strategy import Strategies
 import typer
+from selenium.webdriver.common.keys import Keys  # noqa: F401
 
 
 def login(sb, config):
@@ -29,6 +30,7 @@ def login(sb, config):
     if sb.is_element_present("a.dm_close"):
         sb.uc_click("a.dm_close")
         logging.info("Closed direct message")
+    # might also close hints
 
     return True
 
@@ -42,7 +44,7 @@ def perform_tasks(sb, env, hero_tracker, hero_actions, strategies):
             logging.info(env.all_info)
 
         time.sleep(10)
-        # strategies.check_and_execute()
+        strategies.check_and_execute()
         check_counter += 1
         sb.save_screenshot(str(Path("now.png")))
 
@@ -56,6 +58,9 @@ def perform_tasks(sb, env, hero_tracker, hero_actions, strategies):
 def main(
     headless: bool = typer.Option(True, help="Run browser in headless mode."),
     manual: bool = typer.Option(False, help="Run in simple mode just to open a URL."),
+    sleep: bool = typer.Option(
+        True, help="Should script disconnect and sleep for some time."
+    ),
 ):
     config = dotenv_values()
 
@@ -78,15 +83,30 @@ def main(
             strategies = Strategies(hero_actions, env)
 
             if manual:
+                sb.sleep(2)
+
+                # sb.uc_click('//*[@id="cntrl1"]/a[contains(text(),"Сделать хорошо")]')
+                # sb.click_link("Сделать хорошо")
+                # sb.click("#cntrl1 > a.no_link.div_link.enc_link")
+                # print(sb.is_element_clickable("#cntrl1 > a.no_link.div_link.enc_link"))
+                # sb.uc_click('//*[@id="cntrl1"]/a[contains(text(),"Сделать хорошо")]')
+
+                # selector = "#cntrl1 > a.no_link.div_link.enc_link"
+                # sb.focus(selector)
+                # sb.send_keys(selector, Keys.RETURN)
+                # logging.info("clicked on enc link")
+                # sb.reconnect(5)
+                # logging.info("reconnected")
                 sb.sleep(10000000)
                 return
 
             if not perform_tasks(sb, env, hero_tracker, hero_actions, strategies):
                 return
 
-        random_sleep_time = random.randint(300, 900)
-        logging.info(f"Sleeping for {random_sleep_time} seconds")
-        time.sleep(random_sleep_time)
+        if sleep:
+            random_sleep_time = random.randint(300, 900)
+            logging.info(f"Sleeping for {random_sleep_time} seconds")
+            time.sleep(random_sleep_time)
 
 
 if __name__ == "__main__":

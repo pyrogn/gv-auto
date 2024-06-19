@@ -1,11 +1,13 @@
 import logging
+from gv_auto.environment import EnvironmentInfo
+from gv_auto.hero import HeroActions
 from gv_auto.states import HeroStates, VOICEGOD_TASK, INFLUENCE_TYPE
 
 BRICK_CITIES = ["Торгбург", "Снаряжуполь", "Някинск"]
 
 
 class Strategies:
-    def __init__(self, hero, env):
+    def __init__(self, hero: HeroActions, env: EnvironmentInfo):
         self.hero = hero
         self.env = env
 
@@ -19,7 +21,7 @@ class Strategies:
                 self.env.state_enum not in [HeroStates.FISHING, HeroStates.ADVENTURE]
                 and self.env.closest_town not in BRICK_CITIES
             ):
-                if 1 == 0:
+                if 1 == 1:
                     self.hero.influence(INFLUENCE_TYPE.PUNISH)
                 logging.info("Melt bricks strategy executed.")
         except Exception as e:

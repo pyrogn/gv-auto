@@ -32,6 +32,8 @@ class HeroActions:
 
 
 class HeroTracker:
+    """Tracks available options for a hero (like timeouts and restrictions)."""
+
     def __init__(self):
         self._return_counter = 0
 

@@ -65,7 +65,7 @@ class EnvironmentInfo:
         return where == "Город"
 
     @property
-    def closest_city(self):
+    def closest_town(self):
         position, _ = self.position
         return GameState(self.driver).find_closest_town(position)
 
@@ -111,7 +111,7 @@ class EnvironmentInfo:
     @property
     def all_info(self):
         try:
-            return f"{self.state}|money:{self.money}|prana:{self.prana}|inv:{self.inventory}|bricks:{self.bricks}|hp:{self.health}|where:{','.join(map(str, self.position))}|city:{self.closest_city}|quest:{','.join(map(str, self.quest))}"
+            return f"{self.state}|money:{self.money}|prana:{self.prana}|inv:{self.inventory}|bricks:{self.bricks}|hp:{self.health}|where:{','.join(map(str, self.position))}|city:{self.closest_town}|quest:{','.join(map(str, self.quest))}"
         except Exception as e:
             logging.error(f"Error retrieving all information: {e}")
             return "Error retrieving all information"
