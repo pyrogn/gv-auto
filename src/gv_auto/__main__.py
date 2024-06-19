@@ -9,7 +9,10 @@ from gv_auto.strategy import Strategies
 import typer
 
 
-def main(headless: bool = typer.Option(True, help="Run browser in headless mode.")):
+def main(
+    headless: bool = typer.Option(True, help="Run browser in headless mode."),
+    manual: bool = typer.Option(False, help="Run in simple mode just to open a URL."),
+):
     config = dotenv_values()
 
     logging.basicConfig(
@@ -19,10 +22,17 @@ def main(headless: bool = typer.Option(True, help="Run browser in headless mode.
     web_page = (Path.cwd() / "pages/walking.mht").as_uri()
     web_page = "https://godville.net/"
 
-    with SB(uc=True, headless=headless, user_data_dir="./chrome_profile") as sb:
+    headless = False if manual else headless
+
+    with SB(uc=True, headless2=headless, user_data_dir="./chrome_profile") as sb:
         logging.info("Driver is launched")
-        sb.open(web_page)
+        sb.uc_open(web_page)
         logging.info("Page is loaded")
+
+        if manual:
+            sb.sleep(10000000)
+            return
+
         link = sb.get_current_url()
         if "superhero" not in link:
             sb.type("#username", config["LOGIN"])
@@ -55,6 +65,7 @@ def main(headless: bool = typer.Option(True, help="Run browser in headless mode.
                 time.sleep(10)
                 # strategies.check_and_execute()
                 check_counter += 1
+                sb.save_screenshot("now.png")
 
         except KeyboardInterrupt:
             logging.info("Script terminated by user.")

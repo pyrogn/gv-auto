@@ -44,7 +44,10 @@ class EnvironmentInfo:
 
     @property
     def bricks(self):
-        return int(float(self._get_text("#hk_bricks_cnt > div.l_val")[:-1]) * 10)
+        try:
+            return int(float(self._get_text("#hk_bricks_cnt > div.l_val")[:-1]) * 10)
+        except Exception:
+            return 0
 
     @property
     def health(self):
