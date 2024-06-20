@@ -8,10 +8,12 @@ class HeroStates(Enum):
     FISHING = auto()
     HEALING = auto()
     FIGHTING = auto()
+    DUEL = auto()
     TRADING = auto()
     LEISURE = auto()
     ADVENTURE = auto()
     PRAYING = auto()
+    DEATH = auto()
     UNKNOWN = auto()
 
 
@@ -34,11 +36,13 @@ activity_map = {
     HeroStates.RETURNING: ["Возврат"],
     HeroStates.HEALING: ["Лечение"],
     HeroStates.FIGHTING: ["Бой"],
+    HeroStates.DUEL: ["Босс", "Дуэль"],  # to find out
     HeroStates.TRADING: ["Торговля"],
     HeroStates.FISHING: ["Рыбалка"],
     HeroStates.LEISURE: ["Отдых"],
     HeroStates.ADVENTURE: ["Авантюра"],
     HeroStates.PRAYING: ["Молитва"],
+    HeroStates.DEATH: ["Смерть"],
 }
 
 voicegods_map = {

@@ -17,3 +17,4 @@ chrome_profile*
 .DS_Store
 api_key.txt
 .env
+bot.log

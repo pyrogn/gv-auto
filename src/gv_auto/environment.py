@@ -1,7 +1,11 @@
 import re
 import logging
 from bs4 import BeautifulSoup
+from gv_auto.logger import setup_logging
 from gv_auto.states import HeroStates, str_state2enum_state
+
+setup_logging()
+logger = logging.getLogger(__name__)
 
 
 class EnvironmentInfo:
@@ -12,7 +16,7 @@ class EnvironmentInfo:
         try:
             return self.driver.get_text(selector)
         except Exception as e:
-            logging.error(f"Error retrieving text from {selector}: {e}")
+            logger.error(f"Error retrieving text from {selector}: {e}")
             return ""
 
     def _get_re_from_text(self, selector, regex=r"\d+"):
@@ -20,7 +24,7 @@ class EnvironmentInfo:
             text = self._get_text(selector)
             return re.search(regex, text).group()
         except Exception as e:
-            logging.error(f"Error parsing integer from {selector}: {e}")
+            logger.error(f"Error parsing integer from {selector}: {e}")
             return 0
 
     @property
@@ -56,7 +60,7 @@ class EnvironmentInfo:
             cur_health, all_health = map(int, re.findall(r"\d+", health_str))
             return int(cur_health / all_health * 100)
         except Exception as e:
-            logging.error(f"Error retrieving health: {e}")
+            logger.error(f"Error retrieving health: {e}")
             return 0
 
     @property
@@ -83,7 +87,7 @@ class EnvironmentInfo:
                 area = re.search(r"(.+?)\s*\(", area).group(1)
             return miles, area
         except Exception as e:
-            logging.error(f"Error retrieving position: {e}")
+            logger.error(f"Error retrieving position: {e}")
             return 0, "Unknown"
 
     @property
@@ -93,7 +97,7 @@ class EnvironmentInfo:
             cur_inv, all_inv = map(int, re.findall(r"\d+", inv_str))
             return int(cur_inv / all_inv * 100)
         except Exception as e:
-            logging.error(f"Error retrieving inventory: {e}")
+            logger.error(f"Error retrieving inventory: {e}")
             return 0
 
     @property
@@ -105,15 +109,15 @@ class EnvironmentInfo:
             )
             return quest_n, quest
         except Exception as e:
-            logging.error(f"Error retrieving inventory: {e}")
+            logger.error(f"Error retrieving inventory: {e}")
             return ""
 
     @property
     def all_info(self):
         try:
-            return f"{self.state}|money:{self.money}|prana:{self.prana}|inv:{self.inventory}|bricks:{self.bricks}|hp:{self.health}|where:{','.join(map(str, self.position))}|city:{self.closest_town}|quest:{','.join(map(str, self.quest))}"
+            return f"{self.state}|money:{self.money}|prana:{self.prana}|inv:{self.inventory}|bricks:{self.bricks}|hp:{self.health}|where:{','.join(map(str, self.position))}|town:{self.closest_town}|quest:{','.join(map(str, self.quest))}"
         except Exception as e:
-            logging.error(f"Error retrieving all information: {e}")
+            logger.error(f"Error retrieving all information: {e}")
             return "Error retrieving all information"
 
 
