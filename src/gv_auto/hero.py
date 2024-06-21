@@ -1,12 +1,17 @@
 from datetime import datetime, timedelta
+import json
 import random
 import logging
+import re
 from gv_auto.logger import setup_logging
 from gv_auto.states import INFLUENCE_TYPE, VOICEGOD_TASK, voicegods_map
 from selenium.webdriver.common.keys import Keys  # noqa: F401
 
 setup_logging()
 logger = logging.getLogger(__name__)
+
+
+BINGO_TIMEOUT = 15
 
 
 class HeroTracker:
@@ -16,8 +21,35 @@ class HeroTracker:
         self._return_counter = 0
         self.bingo_counter = 3
         self.last_bingo_time = datetime(2020, 1, 1)
-        self.last_coupon_time = datetime(2020, 1, 1)
         self.last_melting_time = datetime(2020, 1, 1)
+        self.last_sync_time = datetime(2020, 1, 1)
+
+        self._load_state()
+
+    def _load_state(self):
+        try:
+            with open("hero_tracker_state.json", "r") as f:
+                state = json.load(f)
+                self._return_counter = state["return_counter"]
+                self.bingo_counter = state["bingo_counter"]
+                self.last_bingo_time = datetime.fromisoformat(state["last_bingo_time"])
+                self.last_melting_time = datetime.fromisoformat(
+                    state["last_melting_time"]
+                )
+                self.last_sync_time = datetime.fromisoformat(state["last_sync_time"])
+        except (FileNotFoundError, ValueError):
+            pass
+
+    def _save_state(self):
+        state = {
+            "return_counter": self._return_counter,
+            "bingo_counter": self.bingo_counter,
+            "last_bingo_time": self.last_bingo_time.isoformat(),
+            "last_melting_time": self.last_melting_time.isoformat(),
+            "last_sync_time": self.last_sync_time.isoformat(),
+        }
+        with open("hero_tracker_state.json", "w") as f:
+            json.dump(state, f)
 
     @property
     def can_return(self):
@@ -26,55 +58,56 @@ class HeroTracker:
 
     def register_return(self):
         self._return_counter += 1
-
-    def register_quest(self):
-        self._return_counter += 1
+        self._save_state()
 
     def reset_return_cnt(self):
+        # if quest is new or there was mini quest
         self._return_counter = 0
+        self._save_state()
 
     def _sync_bingo_time(self):
-        if self.last_bingo_time < datetime.now().replace(
+        current_time = datetime.now()
+        # with small offset
+        next_deadline = self.deadline_bingo.replace(
             hour=0, minute=7, second=0, microsecond=0
-        ):
-            logger.info("Bingo counter is resetted")
+        )
+        if self.last_sync_time < next_deadline <= current_time:
             self.bingo_counter = 3
+            self.last_sync_time = current_time
+            self._save_state()
+            logger.info("Bingo counter is reset")
 
     @property
-    def bingo_last_call(self):
+    def deadline_bingo(self):
         current_time = datetime.now()
         deadline = current_time.replace(hour=0, minute=5, second=0, microsecond=0)
 
         if current_time > deadline:
             deadline += timedelta(days=1)
+        return deadline
 
-        seconds_left_to_deadline = (deadline - current_time).total_seconds()
+    @property
+    def bingo_last_call(self):
+        current_time = datetime.now()
+
+        seconds_left_to_deadline = (self.deadline_bingo - current_time).total_seconds()
         return seconds_left_to_deadline / 60 < 120
 
     @property
     def is_bingo_available(self):
         self._sync_bingo_time()
 
-        timeout_minutes = 15
         return (self.bingo_counter > 0) and (
-            (datetime.now() - self.last_bingo_time).seconds > timeout_minutes * 60
+            (datetime.now() - self.last_bingo_time).seconds > BINGO_TIMEOUT * 60
         )
 
     def register_bingo_attempt(self):
         self.last_bingo_time = datetime.now()
+        self._save_state()
 
     def register_bingo_play(self):
         self.bingo_counter -= 1
-
-    @property
-    def is_coupon_available(self):
-        # True if last coupon time less than today 00:06
-        return self.last_coupon_time < datetime.now().replace(
-            hour=0, minute=6, second=0, microsecond=0
-        )
-
-    def register_coupon(self):
-        self.last_coupon_time = datetime.now()
+        self._save_state()
 
     @property
     def is_melting_available(self):
@@ -82,6 +115,7 @@ class HeroTracker:
 
     def register_melting(self):
         self.last_melting_time = datetime.now()
+        self._save_state()
 
     @property
     def is_bingo_ended(self):
@@ -138,42 +172,47 @@ class HeroActions:
             logger.error(f"Error in godvoice method: {e}")
 
     def play_bingo(self, finish=False):
-        if not self.driver.is_element_visible("#bgn_end"):
-            self.hero_tracker.is_bingo_ended = True
-            logging.info("Bingo ended")
-        else:
-            self.hero_tracker.is_bingo_ended = False
-        if self.hero_tracker.is_bingo_available:
-            self.driver.uc_open("https://godville.net/news")
-            self.driver.uc_click("#bgn_show")
-            self.hero_tracker.register_bingo_attempt()
-            logger.info("Trying to play bingo and get coupon")
-            self.driver.reconnect(0.5)
-
-            # bingo
-            if self.driver.is_element_clickable("#bgn_use"):
-                text = self.driver.get_text("#b_inv")  # to find number of matches
-                self.driver.uc_click("#bgn_use")
-                logger.info(f"Bingo played: {text}")
-                self.hero_tracker.register_bingo_play()
+        self.driver.uc_open("https://godville.net/news")
+        try:
+            # sync bingo progress
+            if not self.driver.is_element_visible("#bgn_end"):
+                self.hero_tracker.bingo_counter = 0
+                logger.info("Bingo ended")
             else:
-                logger.info("Bingo element is not clickable")
-                end_bingo_elem = "#bgn_end"
-                if finish and not self.hero_tracker.is_bingo_ended:
-                    if self.driver.is_element_clickable(end_bingo_elem):
-                        self.driver.uc_click(end_bingo_elem)
-                    else:
-                        logger.error("Tried to end bingo, but button isn't clickable")
+                left_plays_text = self.driver.get_text("#l_clicks")
+                left_plays = int(
+                    re.search(r"Осталось нажатий: (\d+)\.", left_plays_text).group(1)
+                )
+                self.hero_tracker.bingo_counter = left_plays
+                logger.info("Осталось игр в бинго:", left_plays)
 
-            # coupon
-            if self.hero_tracker.is_coupon_available:
-                button_selector = "#coupon_b"
-                if self.driver.is_element_clickable(button_selector):
-                    self.driver.uc_click(button_selector)
+            if self.hero_tracker.is_bingo_available:
+                self.driver.uc_click("#bgn_show")
+                self.hero_tracker.register_bingo_attempt()
+                logger.info("Trying to play bingo and get coupon")
+                self.driver.reconnect(0.5)
+
+                # bingo
+                if self.driver.is_element_clickable("#bgn_use"):
+                    text = self.driver.get_text("#b_inv")  # to find number of matches
+                    self.driver.uc_click("#bgn_use")
+                    logger.info(f"Bingo played: {text}")
+                    self.hero_tracker.register_bingo_play()
                 else:
-                    logger.error("Coupon element is not clickable")
-                self.hero_tracker.register_coupon()
+                    logger.info("Bingo element is not clickable")
+                    end_bingo_elem = "#bgn_end"
+                    if finish and not self.hero_tracker.is_bingo_ended:
+                        if self.driver.is_element_clickable(end_bingo_elem):
+                            self.driver.uc_click(end_bingo_elem)
+                        else:
+                            logger.error(
+                                "Tried to end bingo, but button isn't clickable"
+                            )
 
+                coupon_selector = "#coupon_b"
+                if self.driver.is_element_clickable(coupon_selector):
+                    self.driver.uc_click(coupon_selector)
+        finally:
             # come back
             self.driver.uc_open("https://godville.net/superhero")
 
