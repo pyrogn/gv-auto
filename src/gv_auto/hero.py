@@ -52,33 +52,34 @@ class HeroTracker:
             json.dump(state, f)
 
     @property
-    def can_return(self):
+    def can_return(self) -> bool:
         # add 6 non working voices in a row
         return self._return_counter < 2
 
-    def register_return(self):
+    def register_return(self) -> None:
         self._return_counter += 1
         self._save_state()
 
-    def reset_return_cnt(self):
+    def reset_return_cnt(self) -> None:
         # if quest is new or there was mini quest
         self._return_counter = 0
         self._save_state()
 
-    def _sync_bingo_time(self):
+    def _sync_bingo_time(self) -> None:
+        """If last sync is past deadline, then reset counter."""
         current_time = datetime.now()
-        # with small offset
-        next_deadline = self.deadline_bingo.replace(
-            hour=0, minute=7, second=0, microsecond=0
+        # with small offset, but previous deadline
+        previous_deadline = (
+            self.deadline_bingo + timedelta(minutes=2) - timedelta(days=1)
         )
-        if self.last_sync_time < next_deadline <= current_time:
+        if self.last_sync_time < previous_deadline:
             self.bingo_counter = 3
             self.last_sync_time = current_time
             self._save_state()
             logger.info("Bingo counter is reset")
 
     @property
-    def deadline_bingo(self):
+    def deadline_bingo(self) -> datetime:
         current_time = datetime.now()
         deadline = current_time.replace(hour=0, minute=5, second=0, microsecond=0)
 
@@ -87,25 +88,27 @@ class HeroTracker:
         return deadline
 
     @property
-    def bingo_last_call(self):
+    def bingo_last_call(self) -> bool:
         current_time = datetime.now()
 
         seconds_left_to_deadline = (self.deadline_bingo - current_time).total_seconds()
         return seconds_left_to_deadline / 60 < 120
 
     @property
-    def is_bingo_available(self):
+    def is_bingo_available(self) -> bool:
         self._sync_bingo_time()
 
         return (self.bingo_counter > 0) and (
             (datetime.now() - self.last_bingo_time).seconds > BINGO_TIMEOUT * 60
         )
 
-    def register_bingo_attempt(self):
+    def register_bingo_attempt(self) -> None:
         self.last_bingo_time = datetime.now()
         self._save_state()
 
-    def register_bingo_play(self):
+    def register_bingo_play(self) -> None:
+        if self.bingo_counter <= 0:
+            raise ValueError("Bingo counter cannot be less than 0")
         self.bingo_counter -= 1
         self._save_state()
 
@@ -175,7 +178,7 @@ class HeroActions:
         self.driver.uc_open("https://godville.net/news")
         try:
             # sync bingo progress
-            if not self.driver.is_element_visible("#bgn_end"):
+            if not self.driver.is_element_visible("#bgn_show"):
                 self.hero_tracker.bingo_counter = 0
                 logger.info("Bingo ended")
             else:
@@ -184,7 +187,7 @@ class HeroActions:
                     re.search(r"Осталось нажатий: (\d+)\.", left_plays_text).group(1)
                 )
                 self.hero_tracker.bingo_counter = left_plays
-                logger.info("Осталось игр в бинго:", left_plays)
+                logger.info(f"Осталось игр в бинго: {left_plays}")
             self.hero_tracker._save_state()
 
             if self.hero_tracker.is_bingo_available:
@@ -217,4 +220,6 @@ class HeroActions:
             # come back
             self.driver.uc_open("https://godville.net/superhero")
 
-    def go_to_zpg_arena(self): ...
+    def go_to_zpg_arena(self):
+        ...
+        # also add sleep after successful sending to arena

@@ -11,7 +11,7 @@
 - [ ] activatables (invite only I think)
 - [ ] track godvoice responses
 - [ ] ideabox parsing / analyzing / autoclick
-- [ ] handling errors (screenshot + log)
+- [ ] handling errors (screenshot + log + notification)
 - [ ] unit tests
 
 
