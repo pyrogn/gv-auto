@@ -18,3 +18,4 @@ chrome_profile*
 api_key.txt
 .env
 bot.log
+hero_tracker_state.json

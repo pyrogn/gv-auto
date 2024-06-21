@@ -25,56 +25,61 @@ class EnvironmentInfo:
             return re.search(regex, text).group()
         except Exception as e:
             logger.error(f"Error parsing integer from {selector}: {e}")
-            return 0
+            return ""
 
     @property
-    def state(self):
+    def state(self) -> str:
         state = self._get_text("#news > div.block_h > h2").split(" ")[0]
         return state if state else "Unknown"
 
     @property
-    def state_enum(self):
+    def state_enum(self) -> HeroStates:
         return str_state2enum_state.get(self.state, HeroStates.UNKNOWN)
 
     @property
-    def money(self):
+    def money(self) -> int:
         return int(self._get_re_from_text("#hk_gold_we > div.l_val"))
 
     @property
-    def prana(self):
+    def prana(self) -> int:
         return int(
             self._get_re_from_text("#cntrl > div.pbar.line > div.gp_val", regex=r"\d+")
         )
 
     @property
-    def bricks(self):
+    def bricks(self) -> int:
         try:
             return int(float(self._get_text("#hk_bricks_cnt > div.l_val")[:-1]) * 10)
         except Exception:
             return 0
 
     @property
-    def health(self):
+    def health(self) -> tuple[int, int]:
         try:
             health_str = self._get_text("#hk_health > div.l_val")
             cur_health, all_health = map(int, re.findall(r"\d+", health_str))
-            return int(cur_health / all_health * 100)
+            return cur_health, all_health
         except Exception as e:
             logger.error(f"Error retrieving health: {e}")
-            return 0
+            return 1, 2
 
     @property
-    def is_in_town(self):
+    def health_perc(self) -> int:
+        cur_health, all_health = self.health
+        return int(cur_health / all_health * 100)
+
+    @property
+    def is_in_town(self) -> bool:
         where = self._get_text("#hk_distance > div.l_capt")
         return where == "Город"
 
     @property
-    def closest_town(self):
+    def closest_town(self) -> str:
         position, _ = self.position
         return GameState(self.driver).find_closest_town(position)
 
     @property
-    def position(self):
+    def position(self) -> tuple[int, str]:
         try:
             is_in_town = self.is_in_town
             miles = self._get_text("#hk_distance > div.l_val")
@@ -91,17 +96,22 @@ class EnvironmentInfo:
             return 0, "Unknown"
 
     @property
-    def inventory(self):
+    def inventory(self) -> tuple[int, int]:
         try:
             inv_str = self._get_text("#hk_inventory_num > div.l_val")
             cur_inv, all_inv = map(int, re.findall(r"\d+", inv_str))
-            return int(cur_inv / all_inv * 100)
+            return cur_inv, all_inv
         except Exception as e:
             logger.error(f"Error retrieving inventory: {e}")
-            return 0
+            return 1, 2
 
     @property
-    def quest(self):
+    def inventory_perc(self) -> int:
+        cur_inv, all_inv = self.inventory
+        return int(cur_inv / all_inv * 100)
+
+    @property
+    def quest(self) -> tuple[int, str]:
         try:
             quest = self._get_text("#hk_quests_completed > div.q_name")
             quest_n = int(
@@ -110,12 +120,22 @@ class EnvironmentInfo:
             return quest_n, quest
         except Exception as e:
             logger.error(f"Error retrieving inventory: {e}")
-            return ""
+            return 0, ""
 
     @property
-    def all_info(self):
+    def all_info(self) -> str:
         try:
-            return f"{self.state}|money:{self.money}|prana:{self.prana}|inv:{self.inventory}|bricks:{self.bricks}|hp:{self.health}|where:{','.join(map(str, self.position))}|town:{self.closest_town}|quest:{','.join(map(str, self.quest))}"
+            return (
+                f"{self.state}|"
+                f"money:{self.money}|"
+                f"prana:{self.prana}|"
+                f"inv:{self.inventory_perc}|"
+                f"bricks:{self.bricks}|"
+                f"hp:{self.health_perc}|"
+                f"where:{','.join(map(str, self.position))}|"
+                f"town:{self.closest_town}|"
+                f"quest:{','.join(map(str, self.quest))}"
+            )
         except Exception as e:
             logger.error(f"Error retrieving all information: {e}")
             return "Error retrieving all information"

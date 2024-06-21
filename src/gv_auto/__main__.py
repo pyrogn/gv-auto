@@ -99,33 +99,6 @@ def main(
             if manual:
                 sb.reconnect(2)
 
-                # logger.info("Живой")
-                # sb.uc_click("#inv_block_content > ul > li:nth-child(4) > div > a")
-
-                # sb.uc_open("https://godville.net/news")
-                # # sb.uc_click("#bgn_show")
-                # # print("click 1")
-                # # if sb.is_element_clickable("#bgn_use"):
-                # #     print("clickable")
-                # #     sb.uc_click("#bgn_use")
-                # #     print("click 2")
-                # #     text = sb.get_text("#b_inv")  # to find number of matches
-                # #     print(text)
-                # # print("not clickable")
-
-                # if sb.is_element_clickable("#ad_b"):
-                #     sb.scroll_to("#ad_b")
-                #     sb.click("#ad_b")
-                #     print("clicked")
-                #     sb.sleep(1)
-                #     print("slept")
-                #     alert = sb.switch_to_alert()
-                #     print(alert.text)
-                #     print(sb.dismiss_alert())
-                #     print("alert dismissed")
-
-                selector = "#cntrl1 > a.no_link.div_link.enc_link"
-
                 sb.disconnect()
                 time.sleep(10000000)
                 return

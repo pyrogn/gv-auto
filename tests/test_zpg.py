@@ -1,5 +1,6 @@
-from pathlib import Path
 from seleniumbase import SB
+
+from tests.utils import get_uri_for_html
 
 
 def zpg_logic(sb, button):
@@ -25,7 +26,7 @@ def zpg_logic(sb, button):
 
 def test_zpg_alerts():
     with SB(uc=True, headless2=True) as sb:
-        page_url = (Path.cwd() / "pages/zpg_confirm.html").as_uri()
+        page_url = get_uri_for_html("pages/zpg_confirm.html")
         sb.open(page_url)
 
         # Test case 1: Arena button

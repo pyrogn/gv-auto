@@ -185,6 +185,7 @@ class HeroActions:
                 )
                 self.hero_tracker.bingo_counter = left_plays
                 logger.info("Осталось игр в бинго:", left_plays)
+            self.hero_tracker._save_state()
 
             if self.hero_tracker.is_bingo_available:
                 self.driver.uc_click("#bgn_show")
