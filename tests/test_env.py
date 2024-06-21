@@ -1,7 +1,7 @@
 from pathlib import Path
 from seleniumbase import SB
 
-from gv_auto.auto import EnvironmentInfo
+from gv_auto.environment import EnvironmentInfo
 
 
 def test_environment_info():

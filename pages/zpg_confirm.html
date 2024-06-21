@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Button Alerts</title>
+</head>
+<body>
+    <button id="button1">Arena</button>
+    <button id="button2">ZPG arena</button>
+    <button id="button3">No ZPG arena</button>
+
+    <script>
+        document.getElementById('button1').addEventListener('click', function() {
+            confirm('arena');
+        });
+
+        document.getElementById('button2').addEventListener('click', function() {
+            confirm('zpg_arena');
+        });
+
+        document.getElementById('button3').addEventListener('click', function() {
+            if (confirm('zpg_arena')) {
+                confirm('no_zpg_arena');
+            }
+        });
+    </script>
+</body>
+</html>

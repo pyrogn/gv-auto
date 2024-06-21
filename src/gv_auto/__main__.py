@@ -3,7 +3,7 @@ import time
 import random
 from dotenv import dotenv_values
 from seleniumbase import SB
-from pathlib import Path
+from pathlib import Path  # noqa: F401
 from gv_auto.environment import EnvironmentInfo
 from gv_auto.hero import HeroActions, HeroTracker
 from gv_auto.logger import setup_logging
@@ -33,40 +33,41 @@ def login(sb):
         return False
     logger.info("Logged in")
 
-    # should not be here
+    return True
+
+
+def routine(sb) -> bool:
+    if sb.is_link_text_visible("Воскресить"):
+        sb.click_link("Воскресить")
+        logger.info("Воскресили")
     if sb.is_element_present("a.dm_close"):
         sb.uc_click("a.dm_close")
         logger.info("Closed direct message")
     if sb.is_link_text_visible("Прекрасно"):
         sb.click_link("Прекрасно")
         logger.info("Closed hint")
-    # might also close hints
 
+    url = sb.get_current_url()
+    if "superhero" not in url:
+        logger.error("Are we banned? Check screenshot or use manual mode.")
+        return False
     return True
+    # sb.save_screenshot(str(Path("now.png")))
 
 
-def perform_tasks(sb, env, hero_tracker, hero_actions, strategies):
-    n_actions = random.randint(50, 150)
+def perform_tasks(sb, env, strategies) -> bool:
+    n_actions = random.randint(50, 250)
     logger.info(f"{n_actions} actions will be performed.")
     check_counter = 0
     while check_counter < n_actions:
         if check_counter % 6 == 0:
             logger.info(env.all_info)
 
-        if sb.is_link_text_visible("Воскресить"):
-            sb.click_link("Воскресить")
-            logger.info("Воскресили")
-
-        sb.reconnect(10)
-        # right now I don't enable strategies
-        # strategies.check_and_execute()
-        check_counter += 1
-        sb.save_screenshot(str(Path("now.png")))
-
-        url = sb.get_current_url()
-        if "superhero" not in url:
-            logger.error("Are we banned? Check screenshot or use manual mode.")
+        if not routine(sb):
             return False
+        strategies.check_and_execute()
+        sb.reconnect(random.randint(8, 15))
+        check_counter += 1
     return True
 
 
@@ -90,19 +91,15 @@ def main(
             if not login(sb):
                 return
 
-            # choose action
-            # bingo + coupon
-            # normal strategies
-
             env = EnvironmentInfo(sb)
             hero_tracker = HeroTracker()
             hero_actions = HeroActions(sb, hero_tracker)
-            strategies = Strategies(hero_actions, env)
+            strategies = Strategies(hero_actions, env, hero_tracker)
 
             if manual:
                 sb.reconnect(2)
 
-                logger.info("Живой")
+                # logger.info("Живой")
                 # sb.uc_click("#inv_block_content > ul > li:nth-child(4) > div > a")
 
                 # sb.uc_open("https://godville.net/news")
@@ -122,28 +119,18 @@ def main(
                 #     print("clicked")
                 #     sb.sleep(1)
                 #     print("slept")
-                #     # alert = sb.switch_to_alert()
-                #     # print(alert.text)
-                #     print(sb.accept_alert())
-
-                # sb.uc_click('//*[@id="cntrl1"]/a[contains(text(),"Сделать хорошо")]')
-                # sb.click_link("Сделать хорошо")
-                # sb.click("#cntrl1 > a.no_link.div_link.enc_link")
-                # print(sb.is_element_clickable("#cntrl1 > a.no_link.div_link.enc_link"))
-                # sb.uc_click('//*[@id="cntrl1"]/a[contains(text(),"Сделать хорошо")]')
+                #     alert = sb.switch_to_alert()
+                #     print(alert.text)
+                #     print(sb.dismiss_alert())
+                #     print("alert dismissed")
 
                 selector = "#cntrl1 > a.no_link.div_link.enc_link"
-                # sb.focus(selector)
-                # sb.send_keys(selector, Keys.RETURN)
-                # logger.info("clicked on enc link")
-                # sb.hover_and_click(selector, selector)
-                # sb.reconnect(5)
-                # logger.info("reconnected")
+
                 sb.disconnect()
                 time.sleep(10000000)
                 return
 
-            if not perform_tasks(sb, env, hero_tracker, hero_actions, strategies):
+            if not perform_tasks(sb, env, strategies):
                 return
 
         if sleep:
