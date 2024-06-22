@@ -21,12 +21,13 @@ class Strategies:
         self.env = env
         self.hero_tracker = hero_tracker
 
-    def check_and_execute(self):
+    def check_and_execute(self) -> None:
         basic_strategies = [
             self.melt_bricks,
             self.bingo,
-            self.zpg_arena,
-            # self.digging,
+            self.zpg_arena,  # how to deal with duel page (download it and analyze)
+            self.digging,  # test it
+            self.city_travel,  # test it
         ]
         for strategy in basic_strategies:
             try:
@@ -36,7 +37,6 @@ class Strategies:
 
         advanced_strategies = [  # noqa: F841
             self.cancel_leaving_guild,
-            self.city_travel,
             self.open_activatables,
             self.craft_items,
         ]
@@ -82,12 +82,13 @@ class Strategies:
 
     def city_travel(self):
         if (
-            (self.env.prana >= 5)
+            self.hero_tracker.is_godvoice_available
+            and (self.env.prana >= 5)
             and (self.env.state_enum == HeroStates.WALKING)
-            # different cities have different prices (look up)
-            and (self.env.money > (2000 - self.env.inventory * 5))
+            and (self.env.money + self.env.inventory[0] * 50 > 2200)
             and (self.env.closest_town in BRICK_TOWNS)
-            # add condition with counters
+            and self.hero_tracker.can_return
+            # and "(мини)" not in self.env.quest[1]
         ):
             # добавить счетчик
             self.hero_actions.godvoice(VOICEGOD_TASK.RETURN)

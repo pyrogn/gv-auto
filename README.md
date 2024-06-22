@@ -7,11 +7,12 @@
 - [x] test gold melting strategy 100% auto
 - [ ] test zpg arena strategy 100% auto
 - [ ] test returning strategy 100% auto
+- [ ] test digging strategy 100% auto
 - [x] Think about env vars like inventory (absolute or %), hp
 - [ ] Saving progress to DB
-- [ ] activatables (invite only I think)
-- [ ] track godvoice responses, changes (gold, prana)
-- [ ] ideabox parsing / analyzing / autoclick
+- [ ] test activatables opening 100% auto (invite only I think)
+- [x] track godvoice responses, changes (basic)
+- [x] ideabox parsing / analyzing / autoclick
 - [ ] handling errors (screenshot + log + notification)
 - [ ] unit tests
 - [ ] Sleep logic (sleep, arena, random)
@@ -25,6 +26,7 @@
 - is logging alright?
 - How fast is parsing? Can we cache something to reduce time with ChromeEngine enabled?
 - Is bot human enough?
+- How to know if a player has finished a mini quest? What features can we use?
 
 
 ## Заметки

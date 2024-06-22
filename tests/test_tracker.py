@@ -78,11 +78,11 @@ def test_register_return(temp_state_file, mock_load_save_state):
     tracker = HeroTracker()
     assert tracker.can_return
     tracker.register_return()
-    assert tracker._return_counter == 1
+    assert tracker.return_counter == 1
     tracker.register_return()
     assert not tracker.can_return
-    tracker.reset_return_cnt()
-    assert tracker._return_counter == 0
+    tracker.update_return_cnt()
+    assert tracker.return_counter == 0
 
 
 @patch("gv_auto.hero.datetime", MockDateTime)
@@ -131,14 +131,14 @@ def test_bingo_last_call(temp_state_file, mock_load_save_state):
 
 def test_save_and_load_state(temp_state_file, mock_load_save_state):
     tracker = HeroTracker()
-    tracker._return_counter = 1
+    tracker.return_counter = 1
     tracker.bingo_counter = 2
     tracker.last_bingo_time = datetime(2023, 6, 20, 0, 0)
     tracker.last_melting_time = datetime(2023, 6, 20, 0, 0)
     tracker._save_state()
 
     new_tracker = HeroTracker()
-    assert new_tracker._return_counter == 1
+    assert new_tracker.return_counter == 1
     assert new_tracker.bingo_counter == 2
     assert new_tracker.last_bingo_time == datetime(2023, 6, 20, 0, 0)
     assert new_tracker.last_melting_time == datetime(2023, 6, 20, 0, 0)

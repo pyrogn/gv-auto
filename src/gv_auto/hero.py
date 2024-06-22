@@ -3,9 +3,10 @@ import json
 import random
 import logging
 import re
+from gv_auto.environment import EnvironmentInfo
 from gv_auto.logger import setup_logging
 from gv_auto.response import Responses, UnderstandResponse
-from gv_auto.states import INFLUENCE_TYPE, VOICEGOD_TASK, voicegods_map
+from gv_auto.states import INFLUENCE_TYPE, VOICEGOD_TASK, HeroStates, voicegods_map
 from selenium.webdriver.common.keys import Keys  # noqa: F401
 
 setup_logging()
@@ -18,13 +19,16 @@ BINGO_TIMEOUT = 15
 class HeroTracker:
     """Tracks available options for a hero (like timeouts and restrictions)."""
 
-    def __init__(self):
-        self._return_counter = 0
+    def __init__(self, env: EnvironmentInfo):
+        self.env = env
+
+        self.return_counter = 0
         self.bingo_counter = 3
         self.last_bingo_time = datetime(2020, 1, 1)
         self.last_melting_time = datetime(2020, 1, 1)
         self.last_sync_time = datetime(2020, 1, 1)
         self.when_godvoice_available = datetime(2020, 1, 1)
+        self.quest_n = 0
 
         self._load_state()
 
@@ -32,7 +36,7 @@ class HeroTracker:
         try:
             with open("hero_tracker_state.json", "r") as f:
                 state = json.load(f)
-                self._return_counter = state["return_counter"]
+                self.return_counter = state["return_counter"]
                 self.bingo_counter = state["bingo_counter"]
                 self.last_bingo_time = datetime.fromisoformat(state["last_bingo_time"])
                 self.last_melting_time = datetime.fromisoformat(
@@ -42,36 +46,40 @@ class HeroTracker:
                 self.when_godvoice_available = datetime.fromisoformat(
                     state["when_godvoice_available"]
                 )
-                # self.current_quest = state['current_quest']
-        except (FileNotFoundError, ValueError):
+                self.quest_n = state["quest_n"]
+        except (FileNotFoundError, ValueError, KeyError):
             pass
 
     def _save_state(self):
         state = {
-            "return_counter": self._return_counter,
+            "return_counter": self.return_counter,
             "bingo_counter": self.bingo_counter,
             "last_bingo_time": self.last_bingo_time.isoformat(),
             "last_melting_time": self.last_melting_time.isoformat(),
             "last_sync_time": self.last_sync_time.isoformat(),
             "when_godvoice_available": self.when_godvoice_available.isoformat(),
-            # "current_quest": EnvironmentInfo(self.driver),
+            "quest_n": self.quest_n,
         }
         with open("hero_tracker_state.json", "w") as f:
             json.dump(state, f, indent=4)
 
     @property
     def can_return(self) -> bool:
-        # add 6 non working voices in a row
-        return self._return_counter < 2
+        # maybe add 6 non working voices in a row
+        self.update_return_cnt(self.env.quest[0])
+        return self.return_counter < 2
 
     def register_return(self) -> None:
-        self._return_counter += 1
+        self.return_counter += 1
         self._save_state()
 
-    def reset_return_cnt(self) -> None:
-        # if quest is new or there was mini quest
-        self._return_counter = 0
-        self._save_state()
+    def update_return_cnt(self, quest_n: int) -> None:
+        # maybe add logic on mini quest (when its done) (it's hard)
+        # how to know if a player has finished a mini quest?
+        if quest_n != self.quest_n:
+            self.return_counter = 0
+            self.quest_n = quest_n
+            self._save_state()
 
     def _sync_bingo_time(self) -> None:
         """If last sync is past deadline, then reset counter."""
@@ -121,10 +129,10 @@ class HeroTracker:
         self._save_state()
 
     @property
-    def is_melting_available(self):
+    def is_melting_available(self) -> bool:
         return (datetime.now() - self.last_melting_time).seconds > 20
 
-    def register_melting(self):
+    def register_melting(self) -> None:
         self.last_melting_time = datetime.now()
         self._save_state()
 
@@ -147,9 +155,10 @@ class HeroTracker:
 
 
 class HeroActions:
-    def __init__(self, driver, hero_tracker: HeroTracker) -> None:
+    def __init__(self, driver, hero_tracker: HeroTracker, env: EnvironmentInfo) -> None:
         self.driver = driver
         self.hero_tracker = hero_tracker
+        self.env = env
 
     def _make_influence(self, influence: INFLUENCE_TYPE):
         match influence:
@@ -189,6 +198,7 @@ class HeroActions:
             logger.error(f"Error in influence method: {e}")
 
     def godvoice(self, task: VOICEGOD_TASK):
+        # if godvoice=return and it succeeded, then register return
         try:
             text = random.choice(voicegods_map[task])
             self.driver.type("#godvoice", text)
@@ -197,6 +207,15 @@ class HeroActions:
             response = UnderstandResponse(self.driver).understand_response()
             self.hero_tracker.register_godvoice(response)
             logger.info(f"Godvoice command '{text}' executed. Hero {response.name}.")
+
+            if (
+                task == VOICEGOD_TASK.RETURN
+                and response is Responses.RESPONDED
+                and self.env.state_enum == HeroStates.RETURNING
+            ):
+                self.hero_tracker.register_return()
+                logger.info(f"Return counter: {self.hero_tracker.return_counter}")
+
         except Exception as e:
             logger.error(f"Error in godvoice method: {e}")
 
@@ -268,4 +287,4 @@ class HeroActions:
                 logger.error(f"Unknown text in second alert: {second_alert_text}")
         except Exception:
             logger.info("We got normal arena, didn't we?")
-        # add sleep (reconnect) during arena
+        # TODO: add sleep (reconnect) during arena

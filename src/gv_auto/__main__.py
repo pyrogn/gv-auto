@@ -97,8 +97,8 @@ def main(
                 return
 
             env = EnvironmentInfo(sb)
-            hero_tracker = HeroTracker()
-            hero_actions = HeroActions(sb, hero_tracker)
+            hero_tracker = HeroTracker(env)
+            hero_actions = HeroActions(sb, hero_tracker, env)
             strategies = Strategies(hero_actions, env, hero_tracker)
 
             if manual:
