@@ -155,9 +155,11 @@ class EnvironmentInfo:
 class GameState:
     def __init__(self, driver):
         self.driver = driver
-        self.town_map = self.city_map()
+        # we may cache this map
+        # because it updates daily
+        self.town_map = self.get_town_map()
 
-    def city_map(self):
+    def get_town_map(self):
         html_content = self.driver.get_page_source()
         soup = BeautifulSoup(html_content, "html.parser")
         towns = soup.find_all("g", class_="tl")

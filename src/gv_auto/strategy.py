@@ -7,7 +7,7 @@ from gv_auto.states import HeroStates, VOICEGOD_TASK, INFLUENCE_TYPE
 setup_logging()
 logger = logging.getLogger(__name__)
 
-BRICK_CITIES = ["Торгбург", "Снаряжуполь", "Някинск"]
+BRICK_TOWNS = ["Торгбург", "Снаряжуполь", "Някинск"]
 MY_GUILD = "Ряды Фурье"
 MAX_GOLD_ZPG_ARENA = 2300
 MIN_PERC_INV_BINGO = 40
@@ -26,6 +26,7 @@ class Strategies:
             self.melt_bricks,
             self.bingo,
             self.zpg_arena,
+            # self.digging,
         ]
         for strategy in basic_strategies:
             try:
@@ -34,7 +35,6 @@ class Strategies:
                 logger.error(f"Error in {strategy.__name__} strategy: {e}")
 
         advanced_strategies = [  # noqa: F841
-            self.digging,
             self.cancel_leaving_guild,
             self.city_travel,
             self.open_activatables,
@@ -45,7 +45,7 @@ class Strategies:
         if (self.env.prana > 25) and (
             self.env.state_enum
             not in [HeroStates.FISHING, HeroStates.ADVENTURE, HeroStates.DUEL]
-            and self.env.closest_town not in BRICK_CITIES
+            and self.env.closest_town not in BRICK_TOWNS
             and self.env.money > 3000
             and self.hero_tracker.is_melting_available
         ):
@@ -62,9 +62,20 @@ class Strategies:
                 logger.info("Bingo last call strategy executed.")
 
     def digging(self):
-        if (self.env.prana >= 5) and (
-            self.env.state_enum in [HeroStates.WALKING, HeroStates.RETURNING]
-            and self.env.health_perc < 30
+        if (
+            self.hero_tracker.is_godvoice_available
+            and (self.env.prana >= 5)
+            and (self.env.inventory_perc < 100)
+            and (
+                (
+                    (self.env.state_enum in [HeroStates.WALKING, HeroStates.RETURNING])
+                    or (  # also works
+                        self.env.state_enum is HeroStates.HEALING
+                        and not self.env.is_in_town
+                    )
+                )
+                and self.env.health_perc < 30  # Don't want to fight with bosses
+            )
         ):
             self.hero_actions.godvoice(VOICEGOD_TASK.DIG)
             logger.info("Digging strategy executed.")
@@ -75,7 +86,7 @@ class Strategies:
             and (self.env.state_enum == HeroStates.WALKING)
             # different cities have different prices (look up)
             and (self.env.money > (2000 - self.env.inventory * 5))
-            and (self.env.closest_town in BRICK_CITIES)
+            and (self.env.closest_town in BRICK_TOWNS)
             # add condition with counters
         ):
             # добавить счетчик
@@ -91,8 +102,10 @@ class Strategies:
             and (self.env.money < MAX_GOLD_ZPG_ARENA)
             and self.env.is_arena_available(zpg=True)
             and (available_inv_slots >= 3)
-            # and don't do it if hero is returning to a brick city
-            # (or conflict of strategies in general)
+            and not (
+                self.env.closest_town in BRICK_TOWNS
+                and self.env.state_enum is HeroStates.RETURNING
+            )
         ):
             self.hero_actions.go_to_zpg_arena()
             logger.info("ZPG arena strategy executed.")

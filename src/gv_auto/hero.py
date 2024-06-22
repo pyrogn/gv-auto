@@ -4,6 +4,7 @@ import random
 import logging
 import re
 from gv_auto.logger import setup_logging
+from gv_auto.response import Responses, UnderstandResponse
 from gv_auto.states import INFLUENCE_TYPE, VOICEGOD_TASK, voicegods_map
 from selenium.webdriver.common.keys import Keys  # noqa: F401
 
@@ -23,6 +24,7 @@ class HeroTracker:
         self.last_bingo_time = datetime(2020, 1, 1)
         self.last_melting_time = datetime(2020, 1, 1)
         self.last_sync_time = datetime(2020, 1, 1)
+        self.when_godvoice_available = datetime(2020, 1, 1)
 
         self._load_state()
 
@@ -37,6 +39,10 @@ class HeroTracker:
                     state["last_melting_time"]
                 )
                 self.last_sync_time = datetime.fromisoformat(state["last_sync_time"])
+                self.when_godvoice_available = datetime.fromisoformat(
+                    state["when_godvoice_available"]
+                )
+                # self.current_quest = state['current_quest']
         except (FileNotFoundError, ValueError):
             pass
 
@@ -47,6 +53,8 @@ class HeroTracker:
             "last_bingo_time": self.last_bingo_time.isoformat(),
             "last_melting_time": self.last_melting_time.isoformat(),
             "last_sync_time": self.last_sync_time.isoformat(),
+            "when_godvoice_available": self.when_godvoice_available.isoformat(),
+            # "current_quest": EnvironmentInfo(self.driver),
         }
         with open("hero_tracker_state.json", "w") as f:
             json.dump(state, f, indent=4)
@@ -125,6 +133,18 @@ class HeroTracker:
         self._sync_bingo_time()
         return self.bingo_counter > 0
 
+    @property
+    def is_godvoice_available(self):
+        return datetime.now() > self.when_godvoice_available
+
+    def register_godvoice(self, response: Responses):
+        match response:
+            case Responses.IGNORED:
+                self.when_godvoice_available = datetime.now() + timedelta(seconds=20)
+            case Responses.RESPONDED:
+                self.when_godvoice_available = datetime.now() + timedelta(seconds=60)
+        self._save_state()
+
 
 class HeroActions:
     def __init__(self, driver, hero_tracker: HeroTracker) -> None:
@@ -173,7 +193,10 @@ class HeroActions:
             text = random.choice(voicegods_map[task])
             self.driver.type("#godvoice", text)
             self.driver.uc_click("#voice_submit")
-            logger.info(f"Godvoice command '{text}' executed successfully.")
+            self.driver.reconnect(1)  # wait for response
+            response = UnderstandResponse(self.driver).understand_response()
+            self.hero_tracker.register_godvoice(response)
+            logger.info(f"Godvoice command '{text}' executed. Hero {response.name}.")
         except Exception as e:
             logger.error(f"Error in godvoice method: {e}")
 
