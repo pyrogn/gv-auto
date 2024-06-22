@@ -49,7 +49,7 @@ class HeroTracker:
             "last_sync_time": self.last_sync_time.isoformat(),
         }
         with open("hero_tracker_state.json", "w") as f:
-            json.dump(state, f)
+            json.dump(state, f, indent=4)
 
     @property
     def can_return(self) -> bool:
@@ -141,7 +141,7 @@ class HeroActions:
                 element_text = "Сделать плохо"
 
         selector = "#cntrl1 > a.no_link.div_link." + selector_add
-        random_choice = random.randint(1, 4)
+        random_choice = random.randint(1, 3)
         match random_choice:
             case 1:
                 self.driver.click(selector)
@@ -149,11 +149,14 @@ class HeroActions:
                 self.driver.click_link(element_text)
             case 3:
                 self.driver.hover_and_click(selector, selector)
-            case 4:
+            case 4:  # doesn't work with UI+
                 self.driver.focus(selector)
                 self.driver.send_keys(selector, Keys.RETURN)
             case _:
-                logger.error(f"{random_choice} is not a valid choice for influcence")
+                logger.error(
+                    f"{random_choice} is not a valid choice "
+                    "for influence methods roulette"
+                )
         if influence == INFLUENCE_TYPE.PUNISH:
             self.hero_tracker.register_melting()
         logger.info(f"Influence was made with {random_choice} strategy")
@@ -161,7 +164,7 @@ class HeroActions:
     def influence(self, infl_type: INFLUENCE_TYPE):
         try:
             self._make_influence(infl_type)
-            logger.info(f"Influence action '{infl_type}' executed successfully.")
+            logger.info(f"Influence action '{infl_type.name}' executed successfully.")
         except Exception as e:
             logger.error(f"Error in influence method: {e}")
 
@@ -208,6 +211,7 @@ class HeroActions:
                     if finish and not self.hero_tracker.is_bingo_ended:
                         if self.driver.is_element_clickable(end_bingo_elem):
                             self.driver.uc_click(end_bingo_elem)
+                            logger.info("Finished bingo before end")
                         else:
                             logger.error(
                                 "Tried to end bingo, but button isn't clickable"
@@ -221,5 +225,24 @@ class HeroActions:
             self.driver.uc_open("https://godville.net/superhero")
 
     def go_to_zpg_arena(self):
-        ...
-        # also add sleep after successful sending to arena
+        selector_arena = "#cntrl2 > div.arena_link_wrap > a"
+
+        if not self.driver.is_element_visible(selector_arena):
+            logger.error("Didn't see arena selector")
+            return
+
+        self.driver.find_element(selector_arena, timeout=1).click()
+        self.driver.sleep(0.5)
+        self.driver.accept_alert(2)
+        logger.info("Accepted first confirm for arena")
+        try:
+            second_alert_text = self.driver.switch_to_alert(2).text
+            self.driver.sleep(0.5)
+            if "ZPG" in second_alert_text:
+                self.driver.accept_alert(5)
+                logger.info(f"Went to ZPG arena: {second_alert_text}")
+            else:
+                logger.error(f"Unknown text in second alert: {second_alert_text}")
+        except Exception:
+            logger.info("We got normal arena, didn't we?")
+        # add sleep (reconnect) during arena

@@ -1,3 +1,4 @@
+from datetime import datetime
 import re
 import logging
 from bs4 import BeautifulSoup
@@ -139,6 +140,15 @@ class EnvironmentInfo:
         except Exception as e:
             logger.error(f"Error retrieving all information: {e}")
             return "Error retrieving all information"
+
+    def is_arena_available(self, zpg=True) -> bool:
+        if zpg:
+            current_time = datetime.now()
+            current_seconds = current_time.minute * 60 + current_time.second
+            offset = 15
+            if not (0 + offset < current_seconds < 180 - offset):
+                return False
+        return self.driver.is_link_text_visible("Отправить на арену")
 
 
 class GameState:

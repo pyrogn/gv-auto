@@ -85,6 +85,10 @@ def main(
             uc=True,
             headless2=headless,
             user_data_dir="./chrome_profile",
+            # these options might speed up loading
+            sjw=True,
+            pls="none",
+            ad_block_on=True,
         ) as sb:
             logger.info("Driver is launched")
 
@@ -98,6 +102,21 @@ def main(
 
             if manual:
                 sb.reconnect(2)
+                # breakpoint()
+                # hero_actions._make_influence(INFLUENCE_TYPE.PUNISH)
+                # print("influence")
+                # sb.click("#cntrl2 > div.arena_link_wrap > a")
+                # if sb.is_link_text_visible("Отправить на арену"):
+                #     print("going to click")
+                #     selector = "#cntrl2 > div.arena_link_wrap > a"
+                #     sb.find_element(selector, timeout=1).click()
+                #     print("clicked")
+                #     sb.sleep(1)
+                #     print("clept")
+                #     # alert = sb.switch_to_alert(2)
+                #     # print(alert.text)
+                #     print(sb.dismiss_alert())
+                #     print("alert dismissed")
 
                 sb.disconnect()
                 time.sleep(10000000)

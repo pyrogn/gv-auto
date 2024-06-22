@@ -9,6 +9,8 @@ logger = logging.getLogger(__name__)
 
 BRICK_CITIES = ["Торгбург", "Снаряжуполь", "Някинск"]
 MY_GUILD = "Ряды Фурье"
+MAX_GOLD_ZPG_ARENA = 2300
+MIN_PERC_INV_BINGO = 40
 
 
 class Strategies:
@@ -20,7 +22,11 @@ class Strategies:
         self.hero_tracker = hero_tracker
 
     def check_and_execute(self):
-        basic_strategies = [self.melt_bricks, self.bingo]
+        basic_strategies = [
+            self.melt_bricks,
+            self.bingo,
+            # self.zpg_arena,
+        ]
         for strategy in basic_strategies:
             try:
                 strategy()
@@ -28,7 +34,6 @@ class Strategies:
                 logger.error(f"Error in {strategy.__name__} strategy: {e}")
 
         advanced_strategies = [  # noqa: F841
-            self.zpg_arena,
             self.digging,
             self.cancel_leaving_guild,
             self.city_travel,
@@ -49,7 +54,7 @@ class Strategies:
 
     def bingo(self):
         if self.hero_tracker.is_bingo_available:
-            if self.env.inventory_perc >= 40:
+            if self.env.inventory_perc >= MIN_PERC_INV_BINGO:
                 self.hero_actions.play_bingo()
                 logger.info("Bingo strategy executed.")
             elif self.hero_tracker.bingo_last_call:
@@ -77,11 +82,16 @@ class Strategies:
             logger.info("Returning strategy executed.")
 
     def zpg_arena(self):
+        inv_cur, inv_full = self.env.inventory
+        available_inv_slots = inv_full - inv_cur
         if (
             (self.env.prana >= 50)
-            and (self.env.state_enum != HeroStates.FISHING)
-            and (self.env.money < 3000)
-            # and zpg is available (parse it)
+            and (self.env.state_enum not in [HeroStates.FISHING, HeroStates.DUEL])
+            and (self.env.money < MAX_GOLD_ZPG_ARENA)
+            and self.env.is_arena_available(zpg=True)
+            and (available_inv_slots >= 3)
+            # and don't do it if hero is returning to a brick city
+            # (or conflict of strategies in general)
         ):
             self.hero_actions.go_to_zpg_arena()
             logger.info("ZPG arena strategy executed.")
