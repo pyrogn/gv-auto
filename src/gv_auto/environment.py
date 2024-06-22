@@ -146,7 +146,8 @@ class EnvironmentInfo:
             current_time = datetime.now()
             current_seconds = current_time.minute * 60 + current_time.second
             offset = 15
-            if not (0 + offset < current_seconds < 180 - offset):
+            # first 3 minutes of every hour
+            if not (0 + offset // 2 < current_seconds < 180 - offset):
                 return False
         return self.driver.is_link_text_visible("Отправить на арену")
 

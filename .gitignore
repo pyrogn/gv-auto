@@ -19,3 +19,7 @@ api_key.txt
 .env
 bot.log
 hero_tracker_state.json
+parsed_votes.csv
+**/*.html
+**/*.mhtml
+**/*.mht

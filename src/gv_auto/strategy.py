@@ -25,7 +25,7 @@ class Strategies:
         basic_strategies = [
             self.melt_bricks,
             self.bingo,
-            # self.zpg_arena,
+            self.zpg_arena,
         ]
         for strategy in basic_strategies:
             try:
@@ -64,6 +64,7 @@ class Strategies:
     def digging(self):
         if (self.env.prana >= 5) and (
             self.env.state_enum in [HeroStates.WALKING, HeroStates.RETURNING]
+            and self.env.health_perc < 30
         ):
             self.hero_actions.godvoice(VOICEGOD_TASK.DIG)
             logger.info("Digging strategy executed.")

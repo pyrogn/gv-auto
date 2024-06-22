@@ -65,6 +65,7 @@ def perform_tasks(sb, env, strategies) -> bool:
 
         if not routine(sb):
             return False
+        # add check for duel mode when we don't run strategies and better just go offline
         strategies.check_and_execute()
         sb.reconnect(random.randint(8, 15))
         check_counter += 1

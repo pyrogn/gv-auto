@@ -49,7 +49,7 @@ voicegods_map = {
     VOICEGOD_TASK.FIGHT: ["Бей"],
     VOICEGOD_TASK.HEAL: ["Лечись"],
     VOICEGOD_TASK.RETURN: ["Домой"],
-    VOICEGOD_TASK.DIG: ["Копай клад"],
+    VOICEGOD_TASK.DIG: ["Копай клад!"],
     VOICEGOD_TASK.CANCEL: ["Отмени задание"],
 }
 

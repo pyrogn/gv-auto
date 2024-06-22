@@ -17,6 +17,7 @@
 - [ ] Sleep logic (sleep, arena, random)
 - [ ] decorators for tracking logic (saving, waiting, comparing, syncing)
 - [ ] crafting
+- [ ] validation of elements in page, if something is wrong - notify
 
 
 ## small things
@@ -36,4 +37,4 @@
   - arena normal: Отправить героя на арену для дуэли с другим игроком?
   - arena zpg: like normal, then: Ближайшие 1 мин 41 с арена работает в режиме полного ZPG, не позволяя богам влиять на героев. Вы готовы положиться на волю случая?
   - if late: alert closes, some error emerges
-- zpg тоже перемещает в годвилль
+- zpg арена тоже перемещает в Годвилль и выдает 3 предмета
