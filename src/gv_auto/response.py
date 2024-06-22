@@ -22,8 +22,7 @@ class UnderstandResponse:
         for elem in self.driver.find_elements("#diary div.d_msg"):
             if "m_infl" in elem.get_attribute("class"):
                 break
-        for response in responses:
-            if "➥" in response:
+            if "➥" in elem.text:
                 return Responses.RESPONDED
         return Responses.IGNORED
 

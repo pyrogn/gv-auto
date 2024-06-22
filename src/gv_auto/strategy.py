@@ -84,7 +84,7 @@ class Strategies:
         if (
             self.hero_tracker.is_godvoice_available
             and (self.env.prana >= 5)
-            and (self.env.state_enum == HeroStates.WALKING)
+            and (self.env.state_enum is HeroStates.WALKING)
             and (self.env.money + self.env.inventory[0] * 50 > 2200)
             and (self.env.closest_town in BRICK_TOWNS)
             and self.hero_tracker.can_return
