@@ -133,20 +133,42 @@ def main(
             if manual:
                 sb.reconnect(2)
                 # breakpoint()
-                # hero_actions._make_influence(INFLUENCE_TYPE.PUNISH)
-                # print("influence")
-                # sb.click("#cntrl2 > div.arena_link_wrap > a")
-                # if sb.is_link_text_visible("Отправить на арену"):
-                #     print("going to click")
-                #     selector = "#cntrl2 > div.arena_link_wrap > a"
-                #     sb.find_element(selector, timeout=1).click()
-                #     print("clicked")
-                #     sb.sleep(1)
-                #     print("clept")
-                #     # alert = sb.switch_to_alert(2)
-                #     # print(alert.text)
-                #     print(sb.dismiss_alert())
-                #     print("alert dismissed")
+                # inventory_items = sb.find_elements("ul.ul_inv > li")
+
+                # for item in inventory_items:
+                #     item_name = item.find_element(By.TAG_NAME, "span").text
+
+                #     class_attribute = item.get_attribute("class")
+                #     match_good_activatables = any(
+                #         [name in class_attribute for name in good_act_classes]
+                #     )
+                #     if match_good_activatables:
+                #         title_element = item.find_element(By.CSS_SELECTOR, "div > a")
+                #         title = (
+                #             title_element.get_attribute("title")
+                #             if title_element
+                #             else None
+                #         )
+
+                #         parentheses_text = None
+                #         prana_price = None
+                #         match = re.search(r"\((.*?)\)", title)
+                #         if match:
+                #             parentheses_text = match.group(1)
+                #             price = re.search(r"\d+", parentheses_text)
+                #             if price:
+                #                 prana_price = int(price.group(0))
+                #             else:
+                #                 prana_price = 0
+
+                #         print(f"Name: {item_name}")
+                #         print(f"Title: {title}")
+                #         print(f"Prana price: {prana_price}")
+
+                #         elem_click = item.find_element(By.CSS_SELECTOR, "div > a")
+
+                #         elem_click.click()
+                #         # sb.click(elem_click)
 
                 sb.disconnect()
                 time.sleep(10000000)
@@ -155,6 +177,11 @@ def main(
             timeout = perform_tasks(sb, env, strategies) or get_random_time_minutes(
                 5, 15
             )
+            if not sleep:  # to prevent constant reconnect during some states
+                logger.info(
+                    f"Because sleep is off, we pause for {timeout/60:.1f} minutes"
+                )
+                sb.reconnect(timeout)
 
         if sleep:
             if timeout >= 60:

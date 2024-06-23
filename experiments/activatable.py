@@ -4,31 +4,61 @@ from seleniumbase import SB
 from pathlib import Path
 from selenium.webdriver.common.by import By
 
+
+def get_class_name(init_name):
+    return "type-" + init_name.replace(" ", "-")
+
+
+boxes = [
+    "black box",
+    "charge box",
+    "gift box",
+    "good box",
+    "prize box",
+    "treasure box",
+]
+friends = ["invite", "friend box"]
+# smelter - 2000 gold, no fight
+# transformer - many fat items
+bricks = ["smelter", "transformer"]
+all_names = []
+for boxes_class in (boxes, friends, bricks):
+    all_names.extend(map(get_class_name, boxes_class))
+print(all_names)
+
 web_page = (Path.cwd() / "pages/activatable.mhtml").as_uri()
 
 with SB(uc=True, headless2=True) as sb:
     sb.open(web_page)
 
-    # Use the appropriate CSS selector to narrow down the search scope
-    inventory_items = sb.find_elements("#inventory > div.block_content ul.ul_inv > li")
+    inventory_items = sb.find_elements("ul.ul_inv > li")
 
     for item in inventory_items:
-        item_text = item.find_element(By.TAG_NAME, "span").text
-        print(item_text)
+        item_name = item.find_element(By.TAG_NAME, "span").text
+
         class_attribute = item.get_attribute("class")
-        print("type-boss-box" in class_attribute)  # find what types exist
+        match_good_activatables = any([name in class_attribute for name in all_names])
+        if match_good_activatables:
+            title_element = item.find_element(By.CSS_SELECTOR, "div > a")
+            title = title_element.get_attribute("title") if title_element else None
 
-        # something: black box, charge box, gift box, good box, prize box, treasure box
-        # friends: invite, friend box
-        # items or gold to bricks: smelter, transformer
+            parentheses_text = None
+            prana_price = None
+            div_text = item.find_element(By.CSS_SELECTOR, "div.item_act_link_div").text
+            match = re.search(r"\((.*?)\)", title)
+            if match:
+                parentheses_text = match.group(1)
+                price = re.search(r"\d+", parentheses_text)
+                if price:
+                    prana_price = int(price.group(0))
+                else:
+                    prana_price = 0
 
-        # if "чёрный-чёрный ящик" in item_text:
-        #     # print(item)
-        #     # print(item_text)
-        #     elem_click = item.find_element(By.CSS_SELECTOR, "div > a")
-        # print(elem_click)
+            print(f"Name: {item_name}")
+            print(f"Title: {title}")
+            print(f"Prana price: {prana_price}")
 
-        # click somehow
-        # elem_click.click()
-        # sb.click(elem_click)
-        # break
+            elem_click = item.find_element(By.CSS_SELECTOR, "div > a")
+
+            elem_click.click()
+            sb.click(elem_click)

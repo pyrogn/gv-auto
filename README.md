@@ -18,7 +18,9 @@
 - [ ] handling errors (screenshot + page_html + log + notification)
 - [ ] unit tests
 - [ ] decorators for tracking logic (saving, waiting, comparing, syncing)
+- [ ] parsing of response (what's changed after activating some item)
 - [ ] validation of elements in page, if something is wrong - notify
+- [ ] refactoring after tests
 
 
 ## small things
@@ -38,5 +40,9 @@
 - При смене дня, если герой в городе, то корректный город находится в панели, а не на карте, и герой переносится вместе с городом (сейчас не совсем корректно).
   - arena normal: Отправить героя на арену для дуэли с другим игроком?
   - arena zpg: like normal, then: Ближайшие 1 мин 41 с арена работает в режиме полного ZPG, не позволяя богам влиять на героев. Вы готовы положиться на волю случая?
-  - if late: alert closes, some error emerges
+  - if late: alert closes, some obscure error emerges
 - zpg арена тоже перемещает в Годвилль и выдает 3 предмета, иногда вдобавок кирпич
+
+
+
+

@@ -57,3 +57,24 @@ str_state2enum_state = {}
 for k, v in activity_map.items():
     for say in v:
         str_state2enum_state[say] = k
+
+
+def get_class_name(init_name):
+    return "type-" + init_name.replace(" ", "-")
+
+
+boxes = [
+    "black box",
+    "charge box",
+    "gift box",
+    "good box",
+    "prize box",
+    "treasure box",
+]
+friends = ["invite", "friend box"]
+# smelter - 2000 gold, no fight
+# transformer - many fat items
+bricks = ["smelter", "transformer"]
+all_boxes = [*boxes, *friends]
+# all_boxes.extend(bricks) # need special conditions for them
+BRICK_FRIEND_ACTIVATABLES = list(map(get_class_name, all_boxes))

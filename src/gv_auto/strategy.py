@@ -26,9 +26,10 @@ class Strategies:
         basic_strategies = [
             self.melt_bricks,
             self.bingo,
-            self.zpg_arena,  # how to deal with duel page (download it and analyze)
-            # self.digging,  # test it
+            self.zpg_arena,
+            self.digging,
             self.city_travel,  # test it
+            self.open_activatables,  # test it
         ]
         for strategy in basic_strategies:
             try:
@@ -38,7 +39,6 @@ class Strategies:
 
         advanced_strategies = [  # noqa: F841
             self.cancel_leaving_guild,
-            self.open_activatables,
             self.craft_items,
         ]
 
@@ -55,7 +55,9 @@ class Strategies:
             logger.info("Melt bricks strategy executed.")
 
     def bingo(self):
-        if self.hero_tracker.is_bingo_available:
+        if self.hero_tracker.is_bingo_available and self.env.state_enum not in [
+            HeroStates.DUEL
+        ]:
             if self.env.inventory_perc >= MIN_PERC_INV_BINGO:
                 self.hero_actions.play_bingo()
                 logger.info("Bingo strategy executed.")
@@ -120,6 +122,8 @@ class Strategies:
 
     def open_activatables(self):
         "If there are certain activatable items, we should open them."
+        if self.env.state_enum not in [HeroStates.DUEL]:
+            self.hero_actions.open_activatables()
 
     def craft_items(self):
         """Crafting items to get certain activatables."""

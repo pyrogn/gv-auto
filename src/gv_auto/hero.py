@@ -6,8 +6,15 @@ import re
 from gv_auto.environment import DailyUpdate, EnvironmentInfo
 from gv_auto.logger import setup_logging
 from gv_auto.response import Responses, UnderstandResponse
-from gv_auto.states import INFLUENCE_TYPE, VOICEGOD_TASK, HeroStates, voicegods_map
+from gv_auto.states import (
+    INFLUENCE_TYPE,
+    VOICEGOD_TASK,
+    HeroStates,
+    voicegods_map,
+    BRICK_FRIEND_ACTIVATABLES,
+)
 from selenium.webdriver.common.keys import Keys  # noqa: F401
+from selenium.webdriver.common.by import By
 
 setup_logging()
 logger = logging.getLogger(__name__)
@@ -288,4 +295,40 @@ class HeroActions:
                 logger.error(f"Unknown text in second alert: {second_alert_text}")
         except Exception:
             logger.info("We got normal arena, didn't we?")
-        # TODO: add sleep (reconnect) during arena
+
+    def open_activatables(self):
+        # add smelter and better management with prana
+        inventory_items = self.driver.find_elements("ul.ul_inv > li")
+
+        for item in inventory_items:
+            class_attribute = item.get_attribute("class")
+            match_good_activatables = any(
+                name in class_attribute for name in BRICK_FRIEND_ACTIVATABLES
+            )
+            if match_good_activatables:
+                logger.info(
+                    f"Item class: {class_attribute}, all classes: {BRICK_FRIEND_ACTIVATABLES}"
+                )
+                item_name = item.find_element(By.TAG_NAME, "span").text
+                title_element = item.find_element(By.CSS_SELECTOR, "div > a")
+                title = title_element.get_attribute("title") if title_element else ""
+
+                parentheses_text = None
+                prana_price = None
+                match = re.search(r"\((.*?)\)", title)
+                if match:
+                    parentheses_text = match.group(1)
+                    price = re.search(r"\d+", parentheses_text)
+                    if price:
+                        prana_price = int(price.group(0))
+                    else:
+                        prana_price = 0
+
+                logger.info(f"I have {item_name}, {title}, price: {prana_price}")
+
+                if self.env.prana >= prana_price:
+                    elem_click = item.find_element(By.CSS_SELECTOR, "div > a")
+                    elem_click.click()
+                    logger.info("Activated this item")
+                else:
+                    logger.info("Not enough prana")
