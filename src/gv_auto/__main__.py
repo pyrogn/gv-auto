@@ -7,6 +7,7 @@ from pathlib import Path  # noqa: F401
 from gv_auto.environment import EnvironmentInfo
 from gv_auto.hero import HeroActions, HeroTracker
 from gv_auto.logger import setup_logging
+from gv_auto.states import HeroStates
 from gv_auto.strategy import Strategies
 import typer
 from selenium.webdriver.common.keys import Keys  # noqa: F401
@@ -65,9 +66,14 @@ def perform_tasks(sb, env, strategies) -> bool:
 
         if not routine(sb):
             return False
-        # add check for duel mode when we don't run strategies and better just go offline
-        strategies.check_and_execute()
-        sb.reconnect(random.randint(8, 15))
+
+        if env.state_enum is HeroStates.DUEL:
+            sb.reconnect(random.randint(5 * 60, 8 * 60))
+        elif env.state_enum is HeroStates.UNKNOWN:
+            logger.error("Got an unknown state, where am I?")
+        else:
+            strategies.check_and_execute()
+            sb.reconnect(random.randint(8, 15))
         check_counter += 1
     return True
 

@@ -170,7 +170,7 @@ class HeroActions:
                 element_text = "Сделать плохо"
 
         selector = "#cntrl1 > a.no_link.div_link." + selector_add
-        random_choice = random.randint(1, 3)
+        random_choice = random.randint(1, 3)  # no preference
         match random_choice:
             case 1:
                 self.driver.click(selector)

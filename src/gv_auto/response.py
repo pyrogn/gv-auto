@@ -17,7 +17,7 @@ class UnderstandResponse:
 
     def understand_response(self) -> Responses:
         # maybe we should add validation that we sent some godvoice
-        responses = []
+        # responses = []
         # we assume top messages are more recent (default UI)
         for elem in self.driver.find_elements("#diary div.d_msg"):
             if "m_infl" in elem.get_attribute("class"):

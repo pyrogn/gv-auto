@@ -23,15 +23,20 @@ class EnvironmentInfo:
     def _get_re_from_text(self, selector, regex=r"\d+"):
         try:
             text = self._get_text(selector)
+            if text == "нет":  # for gold
+                return 0
             return re.search(regex, text).group()
         except Exception as e:
-            logger.error(f"Error parsing integer from {selector}: {e}")
+            logger.error(f"Error parsing integer from {selector}: {e}. Text: {text}")
             return ""
 
     @property
     def state(self) -> str:
-        state = self._get_text("#news > div.block_h > h2").split(" ")[0]
-        return state if state else "Unknown"
+        if self.driver.is_element_present("#diary"):
+            state = self._get_text("#news > div.block_h > h2").split(" ")[0]
+        elif self.driver.is_element_present("#m_fight_log"):
+            state = "Битва"
+        return state or "Unknown"
 
     @property
     def state_enum(self) -> HeroStates:
@@ -39,7 +44,10 @@ class EnvironmentInfo:
 
     @property
     def money(self) -> int:
-        return int(self._get_re_from_text("#hk_gold_we > div.l_val"))
+        try:
+            return int(self._get_re_from_text("#hk_gold_we > div.l_val"))
+        except Exception:  # in case of some greater problem
+            return 0
 
     @property
     def prana(self) -> int:
@@ -126,6 +134,8 @@ class EnvironmentInfo:
     @property
     def all_info(self) -> str:
         try:
+            if self.state_enum is HeroStates.DUEL:
+                return "Duel is in progress"
             return (
                 f"{self.state}|"
                 f"money:{self.money}|"
