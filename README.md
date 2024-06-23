@@ -5,19 +5,19 @@
 - [x] Главный цикл с действиями, разобрать логику
 - [x] test bingo+coupon strategy 100% auto
 - [x] test gold melting strategy 100% auto
-- [ ] test zpg arena strategy 100% auto
-- [ ] test returning strategy 100% auto
-- [ ] test digging strategy 100% auto
+- [x] test zpg arena strategy 100% auto
+- [x] test digging strategy 100% auto
 - [x] Think about env vars like inventory (absolute or %), hp
-- [ ] Saving progress to DB
+- [x] Sleep logic and driver management (sleep, arena, random) (basic)
 - [x] track godvoice responses, changes (basic)
-- [x] ideabox parsing / analyzing / autoclick
-- [ ] handling errors (screenshot + log + notification)
-- [ ] unit tests
-- [ ] Sleep logic and driver management (sleep, arena, random)
-- [ ] decorators for tracking logic (saving, waiting, comparing, syncing)
+- [x] ideabox parsing / analyzing / autoclick (won't do)
+- [ ] test returning strategy 100% auto
 - [ ] test activatables opening 100% auto (invite only I think)
 - [ ] crafting as a strategy
+- [ ] Saving progress to DB
+- [ ] handling errors (screenshot + page_html + log + notification)
+- [ ] unit tests
+- [ ] decorators for tracking logic (saving, waiting, comparing, syncing)
 - [ ] validation of elements in page, if something is wrong - notify
 
 

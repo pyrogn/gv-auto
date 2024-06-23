@@ -14,11 +14,23 @@ from selenium.webdriver.common.keys import Keys  # noqa: F401
 
 setup_logging()
 logger = logging.getLogger(__name__)
+LOG_PERIOD = 60
 
 config = dotenv_values()
 
 
-def login(sb):
+class BadURLException(Exception):
+    """Bad URL."""
+
+
+def validate_url_main_page(sb) -> None:
+    url = sb.get_current_url()
+    if "superhero" not in url:
+        logger.error("Login is unsuccessful")
+        raise BadURLException
+
+
+def login(sb) -> None:
     sb.uc_open("https://godville.net/")
     logger.info("Page is loaded")
 
@@ -28,16 +40,13 @@ def login(sb):
         sb.type("#password", config["PASSWORD"])
         sb.uc_click('input[value="Войти!"]')
         logger.info("Trying to log in")
-    url = sb.get_current_url()
-    if "superhero" not in url:
-        logger.error("Login is unsuccessful")
-        return False
+
+    validate_url_main_page(sb)
+
     logger.info("Logged in")
 
-    return True
 
-
-def routine(sb) -> bool:
+def routine(sb) -> None:
     if sb.is_link_text_visible("Воскресить"):
         sb.click_link("Воскресить")
         logger.info("Воскресили")
@@ -48,34 +57,49 @@ def routine(sb) -> bool:
         sb.click_link("Прекрасно")
         logger.info("Closed hint")
 
-    url = sb.get_current_url()
-    if "superhero" not in url:
-        logger.error("Are we banned? Check screenshot or use manual mode.")
-        return False
-    return True
+    validate_url_main_page(sb)
     # sb.save_screenshot(str(Path("now.png")))
 
 
-def perform_tasks(sb, env, strategies) -> bool:
-    n_actions = random.randint(50, 250)
-    logger.info(f"{n_actions} actions will be performed.")
-    check_counter = 0
-    while check_counter < n_actions:
-        if check_counter % 6 == 0:
+def get_random_time_minutes(min, max) -> int:
+    return random.randint(int(min * 60), int(max * 60))
+
+
+def perform_tasks(sb, env: EnvironmentInfo, strategies: Strategies) -> int | None:
+    run_duration = get_random_time_minutes(20, 80)
+    logger.info(f"Tasks will be performed for {run_duration // 60} minutes.")
+
+    start_time = time.time()
+    next_log_time = start_time + LOG_PERIOD
+
+    while True:
+        current_time = time.time()
+        elapsed_time = current_time - start_time
+
+        if elapsed_time >= run_duration:
+            return None
+
+        if current_time >= next_log_time:
             logger.info(env.all_info)
+            next_log_time += LOG_PERIOD
 
-        if not routine(sb):
-            return False
+        routine(sb)
 
-        if env.state_enum is HeroStates.DUEL:
-            sb.reconnect(random.randint(5 * 60, 8 * 60))
-        elif env.state_enum is HeroStates.UNKNOWN:
-            logger.error("Got an unknown state, where am I?")
-        else:
-            strategies.check_and_execute()
-            sb.reconnect(random.randint(8, 15))
-        check_counter += 1
-    return True
+        strategies.check_and_execute()
+
+        match env.state_enum:
+            case (HeroStates.ADVENTURE, HeroStates.HEALING, HeroStates.PRAYING):
+                sb.reconnect(random.randint(20, 50))
+            case HeroStates.DUEL:
+                return get_random_time_minutes(5, 8)
+            case HeroStates.LEISURE:
+                return get_random_time_minutes(10, 20)
+            case HeroStates.FISHING:
+                return get_random_time_minutes(8, 20)
+            case HeroStates.UNKNOWN:
+                logger.error("Got an unknown state, where am I?")
+            case _:
+                sb.reconnect(random.randint(5, 12))
 
 
 def main(
@@ -99,8 +123,7 @@ def main(
         ) as sb:
             logger.info("Driver is launched")
 
-            if not login(sb):
-                return
+            login(sb)
 
             env = EnvironmentInfo(sb)
             hero_tracker = HeroTracker(env)
@@ -129,13 +152,14 @@ def main(
                 time.sleep(10000000)
                 return
 
-            if not perform_tasks(sb, env, strategies):
-                return
+            timeout = perform_tasks(sb, env, strategies) or get_random_time_minutes(
+                5, 15
+            )
 
         if sleep:
-            random_sleep_time = random.randint(300, 900)
-            logger.info(f"Sleeping for {random_sleep_time} seconds")
-            time.sleep(random_sleep_time)
+            if timeout >= 60:
+                logger.info(f"Sleeping for {timeout/60:.1f} minutes")
+            time.sleep(timeout)
 
 
 if __name__ == "__main__":
