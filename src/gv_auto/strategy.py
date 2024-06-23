@@ -10,7 +10,8 @@ logger = logging.getLogger(__name__)
 BRICK_TOWNS = ["Торгбург", "Снаряжуполь", "Някинск"]
 MY_GUILD = "Ряды Фурье"
 MAX_GOLD_ZPG_ARENA = 2300
-MIN_PERC_INV_BINGO = 40
+MIN_PERC_INV_BINGO = 50
+MIN_PRANA_DIGGING = 55
 
 
 class Strategies:
@@ -26,7 +27,7 @@ class Strategies:
             self.melt_bricks,
             self.bingo,
             self.zpg_arena,  # how to deal with duel page (download it and analyze)
-            self.digging,  # test it
+            # self.digging,  # test it
             self.city_travel,  # test it
         ]
         for strategy in basic_strategies:
@@ -42,8 +43,9 @@ class Strategies:
         ]
 
     def melt_bricks(self):
-        if (self.env.prana > 25) and (
-            self.env.state_enum
+        if (
+            (self.env.prana >= 25)
+            and self.env.state_enum
             not in [HeroStates.FISHING, HeroStates.ADVENTURE, HeroStates.DUEL]
             and self.env.closest_town not in BRICK_TOWNS
             and self.env.money > 3000
@@ -64,18 +66,10 @@ class Strategies:
     def digging(self):
         if (
             self.hero_tracker.is_godvoice_available
-            and (self.env.prana >= 5)
+            and (self.env.prana >= MIN_PRANA_DIGGING)
             and (self.env.inventory_perc < 100)
-            and (
-                (
-                    (self.env.state_enum in [HeroStates.WALKING, HeroStates.RETURNING])
-                    or (  # also works
-                        self.env.state_enum is HeroStates.HEALING
-                        and not self.env.is_in_town
-                    )
-                )
-                and self.env.health_perc < 30  # Don't want to fight with bosses
-            )
+            and self.env.state_enum in [HeroStates.WALKING, HeroStates.RETURNING]
+            and self.env.health_perc < 30  # Don't want to fight with bosses
         ):
             self.hero_actions.godvoice(VOICEGOD_TASK.DIG)
             logger.info("Digging strategy executed.")

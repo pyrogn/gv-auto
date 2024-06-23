@@ -15,13 +15,16 @@ with SB(uc=True, headless2=True) as sb:
     for item in inventory_items:
         item_text = item.find_element(By.TAG_NAME, "span").text
         print(item_text)
-        if "чёрный-чёрный ящик" in item_text:
-            # print(item)
-            # print(item_text)
-            elem_click = item.find_element(By.CSS_SELECTOR, "div > a")
-            # print(elem_click)
+        class_attribute = item.get_attribute("class")
+        print("type-boss-box" in class_attribute)  # find what types exist
 
-            # click somehow
-            # elem_click.click()
-            # sb.click(elem_click)
-            # break
+        # if "чёрный-чёрный ящик" in item_text:
+        #     # print(item)
+        #     # print(item_text)
+        #     elem_click = item.find_element(By.CSS_SELECTOR, "div > a")
+        # print(elem_click)
+
+        # click somehow
+        # elem_click.click()
+        # sb.click(elem_click)
+        # break

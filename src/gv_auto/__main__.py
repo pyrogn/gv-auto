@@ -2,14 +2,15 @@ import logging
 import time
 import random
 from dotenv import dotenv_values
-from seleniumbase import SB
 from pathlib import Path  # noqa: F401
 from gv_auto.environment import EnvironmentInfo
 from gv_auto.hero import HeroActions, HeroTracker
 from gv_auto.logger import setup_logging
+from gv_auto.states import HeroStates
 from gv_auto.strategy import Strategies
 import typer
-from selenium.webdriver.common.keys import Keys  # noqa: F401
+
+from gv_auto.driver import DriverManager, SleepTime  # noqa: F401
 
 setup_logging()
 logger = logging.getLogger(__name__)
@@ -17,17 +18,17 @@ logger = logging.getLogger(__name__)
 config = dotenv_values()
 
 
-def login(sb):
-    sb.uc_open("https://godville.net/")
+def login(driver):
+    driver.uc_open("https://godville.net/")
     logger.info("Page is loaded")
 
-    url = sb.get_current_url()
+    url = driver.current_url
     if "superhero" not in url:
-        sb.type("#username", config["LOGIN"])
-        sb.type("#password", config["PASSWORD"])
-        sb.uc_click('input[value="Войти!"]')
+        driver.type("#username", config["LOGIN"])
+        driver.type("#password", config["PASSWORD"])
+        driver.uc_click('input[value="Войти!"]')
         logger.info("Trying to log in")
-    url = sb.get_current_url()
+    url = driver.current_url
     if "superhero" not in url:
         logger.error("Login is unsuccessful")
         return False
@@ -55,7 +56,9 @@ def routine(sb) -> bool:
     # sb.save_screenshot(str(Path("now.png")))
 
 
-def perform_tasks(sb, env, strategies) -> bool:
+def perform_tasks(
+    driver_manager: DriverManager, env: EnvironmentInfo, strategies: Strategies
+) -> bool:
     n_actions = random.randint(50, 250)
     logger.info(f"{n_actions} actions will be performed.")
     check_counter = 0
@@ -63,11 +66,16 @@ def perform_tasks(sb, env, strategies) -> bool:
         if check_counter % 6 == 0:
             logger.info(env.all_info)
 
-        if not routine(sb):
+        if not routine(driver_manager.driver):
             return False
-        # add check for duel mode when we don't run strategies and better just go offline
-        strategies.check_and_execute()
-        sb.reconnect(random.randint(8, 15))
+
+        if env.state_enum is HeroStates.DUEL:
+            driver_manager.sleep(SleepTime.DUEL)
+        elif env.state_enum is HeroStates.UNKNOWN:
+            logger.error("Got an unknown state, where am I?")
+        else:
+            strategies.check_and_execute()
+            driver_manager.sleep(SleepTime.STEP)
         check_counter += 1
     return True
 
@@ -82,27 +90,21 @@ def main(
     headless = False if manual else headless
 
     while True:
-        with SB(
-            uc=True,
-            headless2=headless,
-            user_data_dir="./chrome_profile",
-            # these options might speed up loading
-            sjw=True,
-            pls="none",
-            ad_block_on=True,
-        ) as sb:
+        try:
+            driver_manager = DriverManager(headless)
             logger.info("Driver is launched")
 
-            if not login(sb):
+            if not login(driver_manager.driver):
                 return
 
-            env = EnvironmentInfo(sb)
+            env = EnvironmentInfo(driver_manager)
             hero_tracker = HeroTracker(env)
-            hero_actions = HeroActions(sb, hero_tracker, env)
+            hero_actions = HeroActions(driver_manager, hero_tracker, env)
             strategies = Strategies(hero_actions, env, hero_tracker)
 
             if manual:
-                sb.reconnect(2)
+                driver = driver_manager.driver
+                driver.reconnect(2)
                 # breakpoint()
                 # hero_actions._make_influence(INFLUENCE_TYPE.PUNISH)
                 # print("influence")
@@ -119,17 +121,17 @@ def main(
                 #     print(sb.dismiss_alert())
                 #     print("alert dismissed")
 
-                sb.disconnect()
+                driver.disconnect()
                 time.sleep(10000000)
                 return
 
-            if not perform_tasks(sb, env, strategies):
+            if not perform_tasks(driver_manager, env, strategies):
                 return
 
-        if sleep:
-            random_sleep_time = random.randint(300, 900)
-            logger.info(f"Sleeping for {random_sleep_time} seconds")
-            time.sleep(random_sleep_time)
+            if sleep:
+                driver_manager.sleep(SleepTime.BREAK)
+        finally:
+            driver_manager.quit_driver()
 
 
 if __name__ == "__main__":

@@ -10,14 +10,14 @@
 - [ ] test digging strategy 100% auto
 - [x] Think about env vars like inventory (absolute or %), hp
 - [ ] Saving progress to DB
-- [ ] test activatables opening 100% auto (invite only I think)
 - [x] track godvoice responses, changes (basic)
 - [x] ideabox parsing / analyzing / autoclick
 - [ ] handling errors (screenshot + log + notification)
 - [ ] unit tests
-- [ ] Sleep logic (sleep, arena, random)
+- [ ] Sleep logic and driver management (sleep, arena, random)
 - [ ] decorators for tracking logic (saving, waiting, comparing, syncing)
-- [ ] crafting
+- [ ] test activatables opening 100% auto (invite only I think)
+- [ ] crafting as a strategy
 - [ ] validation of elements in page, if something is wrong - notify
 
 
@@ -39,4 +39,4 @@
   - arena normal: Отправить героя на арену для дуэли с другим игроком?
   - arena zpg: like normal, then: Ближайшие 1 мин 41 с арена работает в режиме полного ZPG, не позволяя богам влиять на героев. Вы готовы положиться на волю случая?
   - if late: alert closes, some error emerges
-- zpg арена тоже перемещает в Годвилль и выдает 3 предмета
+- zpg арена тоже перемещает в Годвилль и выдает 3 предмета, иногда вдобавок кирпич

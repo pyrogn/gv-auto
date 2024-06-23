@@ -36,7 +36,7 @@ activity_map = {
     HeroStates.RETURNING: ["Возврат"],
     HeroStates.HEALING: ["Лечение"],
     HeroStates.FIGHTING: ["Бой"],
-    HeroStates.DUEL: ["Босс", "Дуэль"],  # to find out
+    HeroStates.DUEL: ["Босс", "Дуэль", "Битва"],  # to find out
     HeroStates.TRADING: ["Торговля"],
     HeroStates.FISHING: ["Рыбалка"],
     HeroStates.LEISURE: ["Отдых"],

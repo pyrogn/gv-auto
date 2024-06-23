@@ -155,8 +155,8 @@ class HeroTracker:
 
 
 class HeroActions:
-    def __init__(self, driver, hero_tracker: HeroTracker, env: EnvironmentInfo) -> None:
-        self.driver = driver
+    def __init__(self, dm, hero_tracker: HeroTracker, env: EnvironmentInfo) -> None:
+        self.dm = dm
         self.hero_tracker = hero_tracker
         self.env = env
 
@@ -170,17 +170,17 @@ class HeroActions:
                 element_text = "Сделать плохо"
 
         selector = "#cntrl1 > a.no_link.div_link." + selector_add
-        random_choice = random.randint(1, 3)
+        random_choice = random.randint(1, 3)  # no preference
         match random_choice:
             case 1:
-                self.driver.click(selector)
+                self.dm.driver.click(selector)
             case 2:
-                self.driver.click_link(element_text)
+                self.dm.driver.click_link(element_text)
             case 3:
-                self.driver.hover_and_click(selector, selector)
+                self.dm.driver.hover_and_click(selector, selector)
             case 4:  # doesn't work with UI+
-                self.driver.focus(selector)
-                self.driver.send_keys(selector, Keys.RETURN)
+                self.dm.driver.focus(selector)
+                self.dm.driver.send_keys(selector, Keys.RETURN)
             case _:
                 logger.error(
                     f"{random_choice} is not a valid choice "
@@ -201,10 +201,10 @@ class HeroActions:
         # if godvoice=return and it succeeded, then register return
         try:
             text = random.choice(voicegods_map[task])
-            self.driver.type("#godvoice", text)
-            self.driver.uc_click("#voice_submit")
-            self.driver.reconnect(1)  # wait for response
-            response = UnderstandResponse(self.driver).understand_response()
+            self.dm.driver.type("#godvoice", text)
+            self.dm.driver.uc_click("#voice_submit")
+            self.dm.driver.reconnect(1)  # wait for response
+            response = UnderstandResponse(self.dm).understand_response()
             self.hero_tracker.register_godvoice(response)
             logger.info(f"Godvoice command '{text}' executed. Hero {response.name}.")
 
@@ -220,14 +220,14 @@ class HeroActions:
             logger.error(f"Error in godvoice method: {e}")
 
     def play_bingo(self, finish=False):
-        self.driver.uc_open("https://godville.net/news")
+        self.dm.driver.uc_open("https://godville.net/news")
         try:
             # sync bingo progress
-            if not self.driver.is_element_visible("#bgn_show"):
+            if not self.dm.driver.is_element_visible("#bgn_show"):
                 self.hero_tracker.bingo_counter = 0
                 logger.info("Bingo ended")
             else:
-                left_plays_text = self.driver.get_text("#l_clicks")
+                left_plays_text = self.dm.driver.get_text("#l_clicks")
                 left_plays = int(
                     re.search(r"Осталось нажатий: (\d+)\.", left_plays_text).group(1)
                 )
@@ -236,23 +236,25 @@ class HeroActions:
             self.hero_tracker._save_state()
 
             if self.hero_tracker.is_bingo_available:
-                self.driver.uc_click("#bgn_show")
+                self.dm.driver.uc_click("#bgn_show")
                 self.hero_tracker.register_bingo_attempt()
                 logger.info("Trying to play bingo and get coupon")
-                self.driver.reconnect(0.5)
+                self.dm.driver.reconnect(0.5)
 
                 # bingo
-                if self.driver.is_element_clickable("#bgn_use"):
-                    text = self.driver.get_text("#b_inv")  # to find number of matches
-                    self.driver.uc_click("#bgn_use")
+                if self.dm.driver.is_element_clickable("#bgn_use"):
+                    text = self.dm.driver.get_text(
+                        "#b_inv"
+                    )  # to find number of matches
+                    self.dm.driver.uc_click("#bgn_use")
                     logger.info(f"Bingo played: {text}")
                     self.hero_tracker.register_bingo_play()
                 else:
                     logger.info("Bingo element is not clickable")
                     end_bingo_elem = "#bgn_end"
                     if finish and not self.hero_tracker.is_bingo_ended:
-                        if self.driver.is_element_clickable(end_bingo_elem):
-                            self.driver.uc_click(end_bingo_elem)
+                        if self.dm.driver.is_element_clickable(end_bingo_elem):
+                            self.dm.driver.uc_click(end_bingo_elem)
                             logger.info("Finished bingo before end")
                         else:
                             logger.error(
@@ -260,28 +262,28 @@ class HeroActions:
                             )
 
                 coupon_selector = "#coupon_b"
-                if self.driver.is_element_clickable(coupon_selector):
-                    self.driver.uc_click(coupon_selector)
+                if self.dm.driver.is_element_clickable(coupon_selector):
+                    self.dm.driver.uc_click(coupon_selector)
         finally:
             # come back
-            self.driver.uc_open("https://godville.net/superhero")
+            self.dm.driver.uc_open("https://godville.net/superhero")
 
     def go_to_zpg_arena(self):
         selector_arena = "#cntrl2 > div.arena_link_wrap > a"
 
-        if not self.driver.is_element_visible(selector_arena):
+        if not self.dm.driver.is_element_visible(selector_arena):
             logger.error("Didn't see arena selector")
             return
 
-        self.driver.find_element(selector_arena, timeout=1).click()
-        self.driver.sleep(0.5)
-        self.driver.accept_alert(2)
+        self.dm.driver.find_element(selector_arena, timeout=1).click()
+        self.dm.driver.sleep(0.5)
+        self.dm.driver.accept_alert(2)
         logger.info("Accepted first confirm for arena")
         try:
-            second_alert_text = self.driver.switch_to_alert(2).text
-            self.driver.sleep(0.5)
+            second_alert_text = self.dm.driver.switch_to_alert(2).text
+            self.dm.driver.sleep(0.5)
             if "ZPG" in second_alert_text:
-                self.driver.accept_alert(5)
+                self.dm.driver.accept_alert(5)
                 logger.info(f"Went to ZPG arena: {second_alert_text}")
             else:
                 logger.error(f"Unknown text in second alert: {second_alert_text}")

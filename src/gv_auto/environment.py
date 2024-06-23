@@ -10,12 +10,12 @@ logger = logging.getLogger(__name__)
 
 
 class EnvironmentInfo:
-    def __init__(self, driver):
-        self.driver = driver
+    def __init__(self, dm):
+        self.dm = dm
 
     def _get_text(self, selector):
         try:
-            return self.driver.get_text(selector)
+            return self.dm.driver.get_text(selector)
         except Exception as e:
             logger.error(f"Error retrieving text from {selector}: {e}")
             return ""
@@ -23,15 +23,20 @@ class EnvironmentInfo:
     def _get_re_from_text(self, selector, regex=r"\d+"):
         try:
             text = self._get_text(selector)
+            if text == "нет":  # for gold
+                return 0
             return re.search(regex, text).group()
         except Exception as e:
-            logger.error(f"Error parsing integer from {selector}: {e}")
+            logger.error(f"Error parsing integer from {selector}: {e}. Text: {text}")
             return ""
 
     @property
     def state(self) -> str:
-        state = self._get_text("#news > div.block_h > h2").split(" ")[0]
-        return state if state else "Unknown"
+        if self.dm.driver.is_element_present("#diary"):
+            state = self._get_text("#news > div.block_h > h2").split(" ")[0]
+        elif self.dm.driver.is_element_present("#m_fight_log"):
+            state = "Битва"
+        return state or "Unknown"
 
     @property
     def state_enum(self) -> HeroStates:
@@ -39,7 +44,10 @@ class EnvironmentInfo:
 
     @property
     def money(self) -> int:
-        return int(self._get_re_from_text("#hk_gold_we > div.l_val"))
+        try:
+            return int(self._get_re_from_text("#hk_gold_we > div.l_val"))
+        except Exception:  # in case of some greater problem
+            return 0
 
     @property
     def prana(self) -> int:
@@ -77,7 +85,7 @@ class EnvironmentInfo:
     @property
     def closest_town(self) -> str:
         position, _ = self.position
-        return GameState(self.driver).find_closest_town(position)
+        return GameState(self.dm).find_closest_town(position)
 
     @property
     def position(self) -> tuple[int, str]:
@@ -88,7 +96,7 @@ class EnvironmentInfo:
                 miles = int(re.search(r"\d+", miles).group())
                 area = "В пути"
             else:
-                area = self.driver.get_attribute("g.tl.sl title", "textContent")
+                area = self.dm.driver.get_attribute("g.tl.sl title", "textContent")
                 miles = int(re.search(r"\d+", area).group())
                 area = re.search(r"(.+?)\s*\(", area).group(1)
             return miles, area
@@ -126,6 +134,8 @@ class EnvironmentInfo:
     @property
     def all_info(self) -> str:
         try:
+            if self.state_enum is HeroStates.DUEL:
+                return "Duel is in progress"
             return (
                 f"{self.state}|"
                 f"money:{self.money}|"
@@ -149,18 +159,18 @@ class EnvironmentInfo:
             # first 3 minutes of every hour
             if not (0 + offset // 2 < current_seconds < 180 - offset):
                 return False
-        return self.driver.is_link_text_visible("Отправить на арену")
+        return self.dm.driver.is_link_text_visible("Отправить на арену")
 
 
 class GameState:
-    def __init__(self, driver):
-        self.driver = driver
+    def __init__(self, dm):
+        self.dm = dm
         # we may cache this map
         # because it updates daily
         self.town_map = self.get_town_map()
 
     def get_town_map(self):
-        html_content = self.driver.get_page_source()
+        html_content = self.dm.driver.get_page_source()
         soup = BeautifulSoup(html_content, "html.parser")
         towns = soup.find_all("g", class_="tl")
         town_map = {}
