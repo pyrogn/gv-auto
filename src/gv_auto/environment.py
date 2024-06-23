@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 import re
 import logging
 from bs4 import BeautifulSoup
@@ -162,14 +162,33 @@ class EnvironmentInfo:
         return self.driver.is_link_text_visible("Отправить на арену")
 
 
+class DailyUpdate:
+    # it looks like a function, but it has a potential I think
+    def __init__(self): ...
+
+    @staticmethod
+    def get_update_time(offset=0, previous=False) -> datetime:
+        current_time = datetime.now()
+        deadline = current_time.replace(
+            hour=0, minute=5, second=0, microsecond=0
+        ) + timedelta(minutes=offset)
+
+        if current_time > deadline:
+            deadline += timedelta(days=1)
+
+        if previous:
+            deadline -= timedelta(days=1)
+
+        return deadline
+
+
 class GameState:
     def __init__(self, driver):
         self.driver = driver
-        # we may cache this map
-        # because it updates daily
-        self.town_map = self.get_town_map()
+        self.town_map = self._get_town_map()
+        self.next_update_time = DailyUpdate.get_update_time(offset=1)
 
-    def get_town_map(self):
+    def _get_town_map(self) -> dict[int, str]:
         html_content = self.driver.get_page_source()
         soup = BeautifulSoup(html_content, "html.parser")
         towns = soup.find_all("g", class_="tl")
@@ -186,7 +205,15 @@ class GameState:
                     town_map[miles] = town_name
         return town_map
 
-    def find_closest_town(self, position):
+    def _update_town_map_if_needed(self) -> None:
+        now = datetime.now()
+        if now > self.next_update_time:
+            logger.info("Updated world map")
+            self.town_map = self._get_town_map()
+            self.next_update_time = DailyUpdate.get_update_time(offset=1)
+
+    def find_closest_town(self, position) -> str:
+        self._update_town_map_if_needed()
         possible_towns = {k: v for k, v in self.town_map.items() if k <= position}
         if not possible_towns:
             return "No towns found in range"

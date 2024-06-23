@@ -3,7 +3,7 @@ import json
 import random
 import logging
 import re
-from gv_auto.environment import EnvironmentInfo
+from gv_auto.environment import DailyUpdate, EnvironmentInfo
 from gv_auto.logger import setup_logging
 from gv_auto.response import Responses, UnderstandResponse
 from gv_auto.states import INFLUENCE_TYPE, VOICEGOD_TASK, HeroStates, voicegods_map
@@ -85,9 +85,8 @@ class HeroTracker:
         """If last sync is past deadline, then reset counter."""
         current_time = datetime.now()
         # with small offset, but previous deadline
-        previous_deadline = (
-            self.deadline_bingo + timedelta(minutes=2) - timedelta(days=1)
-        )
+        previous_deadline = DailyUpdate.get_update_time(offset=2, previous=True)
+
         if self.last_sync_time < previous_deadline:
             self.bingo_counter = 3
             self.last_sync_time = current_time
@@ -107,7 +106,9 @@ class HeroTracker:
     def bingo_last_call(self) -> bool:
         current_time = datetime.now()
 
-        seconds_left_to_deadline = (self.deadline_bingo - current_time).total_seconds()
+        seconds_left_to_deadline = (
+            DailyUpdate.get_update_time() - current_time
+        ).total_seconds()
         return seconds_left_to_deadline / 60 < 120
 
     @property

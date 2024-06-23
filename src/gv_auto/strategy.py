@@ -27,7 +27,7 @@ class Strategies:
             self.melt_bricks,
             self.bingo,
             self.zpg_arena,  # how to deal with duel page (download it and analyze)
-            self.digging,  # test it
+            # self.digging,  # test it
             self.city_travel,  # test it
         ]
         for strategy in basic_strategies:
