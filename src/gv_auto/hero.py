@@ -12,7 +12,7 @@ from gv_auto.game_info import (
     VOICEGOD_TASK,
     HeroStates,
     voicegods_map,
-    BRICK_FRIEND_ACTIVATABLES,
+    USEFUL_AND_FUN_ACTIVATABLES,
 )
 from selenium.webdriver.common.keys import Keys  # noqa: F401
 from selenium.webdriver.common.by import By
@@ -141,6 +141,10 @@ class HeroTracker:
             raise ValueError("Bingo counter cannot be less than 0")
         self.state["bingo_counter"] -= 1
 
+    @save_state
+    def update_bingo_counter(self, left_plays):
+        self.state["bingo_counter"] = left_plays
+
     @property
     @sync_bingo_time
     def is_bingo_ended(self):
@@ -234,18 +238,17 @@ class HeroActions:
     def play_bingo(self, finish=False):
         self.driver.uc_open("https://godville.net/news")
         try:
-            # sync bingo progress
+            # Sync bingo progress
             if not self.driver.is_element_visible("#bgn_show"):
-                self.hero_tracker.bingo_counter = 0
+                self.hero_tracker.update_bingo_counter(0)
                 logger.info("Bingo ended")
             else:
                 left_plays_text = self.driver.get_text("#l_clicks")
                 left_plays = int(
                     re.search(r"Осталось нажатий: (\d+)\.", left_plays_text).group(1)
                 )
-                self.hero_tracker.bingo_counter = left_plays
+                self.hero_tracker.update_bingo_counter(left_plays)
                 logger.info(f"Осталось игр в бинго: {left_plays}")
-            self.hero_tracker._save_state()
 
             if self.hero_tracker.is_bingo_available:
                 self.driver.uc_click("#bgn_show")
@@ -311,7 +314,7 @@ class HeroActions:
         for item in inventory_items:
             class_attribute = item.get_attribute("class")
             match_good_activatables = any(
-                name in class_attribute for name in BRICK_FRIEND_ACTIVATABLES
+                name in class_attribute for name in USEFUL_AND_FUN_ACTIVATABLES
             )
             if match_good_activatables:
                 item_name = item.find_element(By.TAG_NAME, "span").text

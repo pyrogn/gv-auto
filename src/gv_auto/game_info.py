@@ -80,10 +80,12 @@ friends = ["invite", "friend box"]
 bricks = ["smelter", "transformer"]
 all_boxes = [*boxes, *friends]
 # all_boxes.extend(bricks) # need special conditions for them
-BRICK_FRIEND_ACTIVATABLES = list(map(get_class_name, all_boxes))
+USEFUL_AND_FUN_ACTIVATABLES = list(map(get_class_name, all_boxes))
 
 
 class FeatureLock:
+    """Class to understand which features are available for current level."""
+
     def __init__(self, level) -> None:
         self.level = level
 

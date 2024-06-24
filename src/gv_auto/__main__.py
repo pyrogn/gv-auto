@@ -90,17 +90,21 @@ def perform_tasks(sb, env: EnvironmentInfo, strategies: Strategies) -> int | Non
         strategies.check_and_execute()
 
         match env.state_enum:
+            # more rare update
             case (HeroStates.ADVENTURE, HeroStates.HEALING, HeroStates.PRAYING):
                 sb.reconnect(random.randint(20, 50))
             case HeroStates.DUEL:
                 return get_random_time_minutes(5, 8)
             case HeroStates.LEISURE:
                 return get_random_time_minutes(10, 20)
+            case HeroStates.SLEEPING:
+                return get_random_time_minutes(5, 10)
             case HeroStates.FISHING:
                 return get_random_time_minutes(8, 15)
             case HeroStates.UNKNOWN:
                 logger.error("Got an unknown state, where am I?")
                 LogError(sb).log_error()
+            # usual case - disconnect WebDriver for about 10 seconds
             case _:
                 sb.reconnect(random.randint(5, 12))
 
