@@ -8,6 +8,7 @@ class HeroStates(Enum):
     FISHING = auto()
     HEALING = auto()
     FIGHTING = auto()
+    AFTER_ARENA = auto()
     DUEL = auto()
     TRADING = auto()
     LEISURE = auto()
@@ -43,6 +44,7 @@ activity_map = {
     HeroStates.ADVENTURE: ["Авантюра"],
     HeroStates.PRAYING: ["Молитва"],
     HeroStates.DEATH: ["Смерть"],
+    HeroStates.AFTER_ARENA: ["Бытие"],
 }
 
 voicegods_map = {
@@ -71,6 +73,7 @@ boxes = [
     "prize box",
     "treasure box",
 ]
+# friend box costs 50% prana
 friends = ["invite", "friend box"]
 # smelter - 2000 gold, no fight
 # transformer - many fat items

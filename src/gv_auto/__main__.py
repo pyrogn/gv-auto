@@ -1,12 +1,13 @@
 import logging
 import time
 import random
+import traceback
 from dotenv import dotenv_values
 from seleniumbase import SB
 from pathlib import Path  # noqa: F401
 from gv_auto.environment import EnvironmentInfo
 from gv_auto.hero import HeroActions, HeroTracker
-from gv_auto.logger import setup_logging
+from gv_auto.logger import LogError, setup_logging
 from gv_auto.states import HeroStates
 from gv_auto.strategy import Strategies
 import typer
@@ -27,6 +28,7 @@ def validate_url_main_page(sb) -> None:
     url = sb.get_current_url()
     if "superhero" not in url:
         logger.error("Login is unsuccessful")
+        LogError(sb).log_error()
         raise BadURLException
 
 
@@ -51,10 +53,10 @@ def routine(sb) -> None:
         sb.click_link("Воскресить")
         logger.info("Воскресили")
     if sb.is_element_present("a.dm_close"):
-        sb.uc_click("a.dm_close")
+        sb.click("a.dm_close")
         logger.info("Closed direct message")
-    if sb.is_link_text_visible("Прекрасно"):
-        sb.click_link("Прекрасно")
+    if sb.is_element_visible("#hint_controls > span"):
+        sb.click("#hint_controls > span")
         logger.info("Closed hint")
 
     validate_url_main_page(sb)
@@ -98,6 +100,7 @@ def perform_tasks(sb, env: EnvironmentInfo, strategies: Strategies) -> int | Non
                 return get_random_time_minutes(8, 20)
             case HeroStates.UNKNOWN:
                 logger.error("Got an unknown state, where am I?")
+                LogError(sb).log_error()
             case _:
                 sb.reconnect(random.randint(5, 12))
 
@@ -121,67 +124,36 @@ def main(
             pls="none",
             ad_block_on=True,
         ) as sb:
-            logger.info("Driver is launched")
+            try:
+                logger.info("Driver is launched")
 
-            login(sb)
+                login(sb)
 
-            env = EnvironmentInfo(sb)
-            hero_tracker = HeroTracker(env)
-            hero_actions = HeroActions(sb, hero_tracker, env)
-            strategies = Strategies(hero_actions, env, hero_tracker)
+                env = EnvironmentInfo(sb)
+                hero_tracker = HeroTracker(env)
+                hero_actions = HeroActions(sb, hero_tracker, env)
+                strategies = Strategies(hero_actions, env, hero_tracker)
 
-            if manual:
-                sb.reconnect(2)
-                # breakpoint()
-                # inventory_items = sb.find_elements("ul.ul_inv > li")
+                if manual:
+                    sb.reconnect(2)
+                    # breakpoint()
 
-                # for item in inventory_items:
-                #     item_name = item.find_element(By.TAG_NAME, "span").text
+                    sb.disconnect()
+                    time.sleep(10000000)
+                    return
 
-                #     class_attribute = item.get_attribute("class")
-                #     match_good_activatables = any(
-                #         [name in class_attribute for name in good_act_classes]
-                #     )
-                #     if match_good_activatables:
-                #         title_element = item.find_element(By.CSS_SELECTOR, "div > a")
-                #         title = (
-                #             title_element.get_attribute("title")
-                #             if title_element
-                #             else None
-                #         )
-
-                #         parentheses_text = None
-                #         prana_price = None
-                #         match = re.search(r"\((.*?)\)", title)
-                #         if match:
-                #             parentheses_text = match.group(1)
-                #             price = re.search(r"\d+", parentheses_text)
-                #             if price:
-                #                 prana_price = int(price.group(0))
-                #             else:
-                #                 prana_price = 0
-
-                #         print(f"Name: {item_name}")
-                #         print(f"Title: {title}")
-                #         print(f"Prana price: {prana_price}")
-
-                #         elem_click = item.find_element(By.CSS_SELECTOR, "div > a")
-
-                #         elem_click.click()
-                #         # sb.click(elem_click)
-
-                sb.disconnect()
-                time.sleep(10000000)
-                return
-
-            timeout = perform_tasks(sb, env, strategies) or get_random_time_minutes(
-                5, 15
-            )
-            if not sleep:  # to prevent constant reconnect during some states
-                logger.info(
-                    f"Because sleep is off, we pause for {timeout/60:.1f} minutes"
+                timeout = perform_tasks(sb, env, strategies) or get_random_time_minutes(
+                    5, 15
                 )
-                sb.reconnect(timeout)
+                if not sleep:  # to prevent constant reconnect during some states
+                    logger.info(
+                        f"Because sleep is off, we pause for {timeout/60:.1f} minutes"
+                    )
+                    sb.reconnect(timeout)
+
+            except Exception as e:
+                logger.error(f"{traceback.print_exc(e)}")
+                LogError(sb).log_error()
 
         if sleep:
             if timeout >= 60:

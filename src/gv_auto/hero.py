@@ -253,7 +253,8 @@ class HeroActions:
                 if self.driver.is_element_clickable("#bgn_use"):
                     text = self.driver.get_text("#b_inv")  # to find number of matches
                     self.driver.uc_click("#bgn_use")
-                    logger.info(f"Bingo played: {text}")
+                    linear_text = re.sub(r"\s+", " ", text)
+                    logger.info(f"Bingo played: {linear_text}")
                     self.hero_tracker.register_bingo_play()
                 else:
                     logger.info("Bingo element is not clickable")
@@ -330,5 +331,10 @@ class HeroActions:
                     elem_click = item.find_element(By.CSS_SELECTOR, "div > a")
                     elem_click.click()
                     logger.info("Activated this item")
+                    self.driver.reconnect(1)
+                    response_str = UnderstandResponse(self.driver).get_response()
+                    logger.info(f"Hero's response: {response_str}")
                 else:
+                    # will spam, going to remove it after some time
                     logger.info("Not enough prana")
+                return

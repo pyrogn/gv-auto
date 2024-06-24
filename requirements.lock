@@ -40,7 +40,7 @@ execnet==2.1.1
     # via seleniumbase
 fasteners==0.19
     # via seleniumbase
-filelock==3.15.3
+filelock==3.15.4
     # via seleniumbase
 h11==0.14.0
     # via seleniumbase
@@ -80,7 +80,7 @@ parse-type==0.6.2
     # via seleniumbase
 pdbp==1.5.0
     # via seleniumbase
-pip==24.0
+pip==24.1
     # via seleniumbase
 platformdirs==4.2.2
     # via seleniumbase
@@ -132,9 +132,9 @@ rich==13.7.1
     # via typer
 sbvirtualdisplay==1.3.0
     # via seleniumbase
-selenium==4.21.0
+selenium==4.22.0
     # via seleniumbase
-seleniumbase==4.27.5
+seleniumbase==4.28.0
     # via gv-auto
 setuptools==70.1.0
     # via seleniumbase
@@ -174,6 +174,9 @@ tzdata==2024.1
     # via pandas
 urllib3==2.2.2
     # via requests
+    # via selenium
+    # via seleniumbase
+websocket-client==1.8.0
     # via selenium
     # via seleniumbase
 wheel==0.43.0

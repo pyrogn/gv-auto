@@ -11,11 +11,11 @@
 - [x] Sleep logic and driver management (sleep, arena, random) (basic)
 - [x] track godvoice responses, changes (basic)
 - [x] ideabox parsing / analyzing / autoclick (won't do)
+- [x] handling errors (screenshot + page_html + log)
 - [ ] test returning strategy 100% auto
-- [ ] test activatables opening 100% auto (invite only I think)
+- [ ] test activatables opening 100% auto
 - [ ] crafting as a strategy
-- [ ] Saving progress to DB
-- [ ] handling errors (screenshot + page_html + log + notification)
+- [ ] Saving progress to DB (with what purpose?)
 - [ ] unit tests
 - [ ] decorators for tracking logic (saving, waiting, comparing, syncing)
 - [ ] parsing of response (what's changed after activating some item)
@@ -29,6 +29,7 @@
 - How fast is parsing? Can we cache something to reduce time with ChromeEngine enabled?
 - Is bot human enough?
 - How to know if a player has finished a mini quest? What features can we use?
+- some stale element reference error when scanning items. div_link in class of activatable means we can click on @ sign.
 
 
 ## Заметки

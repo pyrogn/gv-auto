@@ -3,6 +3,7 @@ from gv_auto.environment import EnvironmentInfo
 from gv_auto.hero import HeroActions, HeroTracker
 from gv_auto.logger import setup_logging
 from gv_auto.states import HeroStates, VOICEGOD_TASK, INFLUENCE_TYPE
+import traceback
 
 setup_logging()
 logger = logging.getLogger(__name__)
@@ -12,6 +13,7 @@ MY_GUILD = "Ряды Фурье"
 MAX_GOLD_ZPG_ARENA = 2300
 MIN_PERC_INV_BINGO = 50
 MIN_PRANA_DIGGING = 55
+MIN_PRANA_CITY_TRAVEL = 30
 
 
 class Strategies:
@@ -35,7 +37,9 @@ class Strategies:
             try:
                 strategy()
             except Exception as e:
-                logger.error(f"Error in {strategy.__name__} strategy: {e}")
+                logger.error(
+                    f"Error in {strategy.__name__} strategy: {e}\n{traceback.format_exc()}"
+                )
 
         advanced_strategies = [  # noqa: F841
             self.cancel_leaving_guild,
@@ -79,7 +83,7 @@ class Strategies:
     def city_travel(self):
         if (
             self.hero_tracker.is_godvoice_available
-            and (self.env.prana >= 5)
+            and (self.env.prana >= MIN_PRANA_CITY_TRAVEL)
             and (self.env.state_enum is HeroStates.WALKING)
             and (self.env.money + self.env.inventory[0] * 50 > 2200)
             and (self.env.closest_town in BRICK_TOWNS)

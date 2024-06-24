@@ -1,8 +1,9 @@
 from datetime import datetime, timedelta
 import re
 import logging
+import traceback
 from bs4 import BeautifulSoup
-from gv_auto.logger import setup_logging
+from gv_auto.logger import LogError, setup_logging
 from gv_auto.states import HeroStates, str_state2enum_state
 
 setup_logging()
@@ -17,7 +18,10 @@ class EnvironmentInfo:
         try:
             return self.driver.get_text(selector)
         except Exception as e:
-            logger.error(f"Error retrieving text from {selector}: {e}")
+            logger.error(
+                f"Error retrieving text from {selector}: {e}\n{traceback.format_exc()}"
+            )
+            LogError(self.driver).log_error()  # this will spam heavily
             return ""
 
     def _get_re_from_text(self, selector, regex=r"\d+"):
@@ -27,7 +31,10 @@ class EnvironmentInfo:
                 return 0
             return re.search(regex, text).group()
         except Exception as e:
-            logger.error(f"Error parsing integer from {selector}: {e}. Text: {text}")
+            logger.error(
+                f"Error parsing integer from {selector}: {e}. Text: {text}\n{traceback.format_exc()}"
+            )
+            LogError(self.driver).log_error()  # this will spam heavily
             return ""
 
     @property
@@ -101,7 +108,7 @@ class EnvironmentInfo:
                 area = re.search(r"(.+?)\s*\(", area).group(1)
             return miles, area
         except Exception as e:
-            logger.error(f"Error retrieving position: {e}")
+            logger.error(f"Error retrieving position: {e}\n{traceback.format_exc()}")
             return 0, "Unknown"
 
     @property
