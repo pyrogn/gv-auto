@@ -8,7 +8,7 @@ from pathlib import Path  # noqa: F401
 from gv_auto.environment import EnvironmentInfo
 from gv_auto.hero import HeroActions, HeroTracker
 from gv_auto.logger import LogError, setup_logging
-from gv_auto.states import HeroStates
+from gv_auto.game_info import HeroStates
 from gv_auto.strategy import Strategies
 import typer
 from selenium.webdriver.common.keys import Keys  # noqa: F401
@@ -97,7 +97,7 @@ def perform_tasks(sb, env: EnvironmentInfo, strategies: Strategies) -> int | Non
             case HeroStates.LEISURE:
                 return get_random_time_minutes(10, 20)
             case HeroStates.FISHING:
-                return get_random_time_minutes(8, 20)
+                return get_random_time_minutes(8, 15)
             case HeroStates.UNKNOWN:
                 logger.error("Got an unknown state, where am I?")
                 LogError(sb).log_error()
@@ -119,7 +119,7 @@ def main(
             uc=True,
             headless2=headless,
             user_data_dir="./chrome_profile",
-            # these options might speed up loading
+            # these options speed up loading
             sjw=True,
             pls="none",
             ad_block_on=True,
@@ -152,8 +152,12 @@ def main(
                     sb.reconnect(timeout)
 
             except Exception as e:
-                logger.error(f"{traceback.print_exc(e)}")
+                logger.error(f"Exception occurred: {e}")
+                logger.error(traceback.format_exc())
                 LogError(sb).log_error()
+                break
+                # then analyze, fix error and start again.
+                # Better to analyze problem, then trying to be stuck in loop with error.
 
         if sleep:
             if timeout >= 60:

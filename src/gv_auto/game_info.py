@@ -55,10 +55,10 @@ voicegods_map = {
     VOICEGOD_TASK.CANCEL: ["Отмени задание"],
 }
 
-str_state2enum_state = {}
+HERO_STATE_STR2ENUM = {}
 for k, v in activity_map.items():
     for say in v:
-        str_state2enum_state[say] = k
+        HERO_STATE_STR2ENUM[say] = k
 
 
 def get_class_name(init_name):
@@ -81,3 +81,16 @@ bricks = ["smelter", "transformer"]
 all_boxes = [*boxes, *friends]
 # all_boxes.extend(bricks) # need special conditions for them
 BRICK_FRIEND_ACTIVATABLES = list(map(get_class_name, all_boxes))
+
+
+class FeatureLock:
+    def __init__(self, level) -> None:
+        self.level = level
+
+    @property
+    def is_zpg_arena_available(self):
+        return self.level >= 10
+
+    @property
+    def is_guild_available(self):
+        return self.level >= 12

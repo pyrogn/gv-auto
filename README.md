@@ -12,15 +12,16 @@
 - [x] track godvoice responses, changes (basic)
 - [x] ideabox parsing / analyzing / autoclick (won't do)
 - [x] handling errors (screenshot + page_html + log)
+- [x] parsing of response (basic text)
 - [ ] test returning strategy 100% auto
 - [ ] test activatables opening 100% auto
-- [ ] crafting as a strategy
+- [ ] crafting as a strategy (need manual testing first)
+- [ ] benchmark parsing, what is faster (from html or seleniumbase)
 - [ ] Saving progress to DB (with what purpose?)
 - [ ] unit tests
 - [ ] decorators for tracking logic (saving, waiting, comparing, syncing)
-- [ ] parsing of response (what's changed after activating some item)
-- [ ] validation of elements in page, if something is wrong - notify
-- [ ] refactoring after tests
+- [ ] refactoring
+- [ ] validation of elements in page, if something is wrong - notify (what is it?)
 
 
 ## small things

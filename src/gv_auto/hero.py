@@ -6,7 +6,7 @@ import re
 from gv_auto.environment import DailyUpdate, EnvironmentInfo
 from gv_auto.logger import setup_logging
 from gv_auto.response import Responses, UnderstandResponse
-from gv_auto.states import (
+from gv_auto.game_info import (
     INFLUENCE_TYPE,
     VOICEGOD_TASK,
     HeroStates,
@@ -206,7 +206,6 @@ class HeroActions:
             logger.error(f"Error in influence method: {e}")
 
     def godvoice(self, task: VOICEGOD_TASK):
-        # if godvoice=return and it succeeded, then register return
         try:
             text = random.choice(voicegods_map[task])
             self.driver.type("#godvoice", text)
@@ -301,15 +300,13 @@ class HeroActions:
         # add smelter and better management with prana
         inventory_items = self.driver.find_elements("ul.ul_inv > li")
 
+        # REF: might get stale during iteration
         for item in inventory_items:
             class_attribute = item.get_attribute("class")
             match_good_activatables = any(
                 name in class_attribute for name in BRICK_FRIEND_ACTIVATABLES
             )
             if match_good_activatables:
-                logger.info(
-                    f"Item class: {class_attribute}, all classes: {BRICK_FRIEND_ACTIVATABLES}"
-                )
                 item_name = item.find_element(By.TAG_NAME, "span").text
                 title_element = item.find_element(By.CSS_SELECTOR, "div > a")
                 title = title_element.get_attribute("title") if title_element else ""
@@ -325,16 +322,29 @@ class HeroActions:
                     else:
                         prana_price = 0
 
-                logger.info(f"I have {item_name}, {title}, price: {prana_price}")
-
                 if self.env.prana >= prana_price:
+                    logger.info(
+                        f"I have {item_name}, class: {class_attribute}, {title}, price: {prana_price}"
+                    )
                     elem_click = item.find_element(By.CSS_SELECTOR, "div > a")
                     elem_click.click()
                     logger.info("Activated this item")
                     self.driver.reconnect(1)
                     response_str = UnderstandResponse(self.driver).get_response()
                     logger.info(f"Hero's response: {response_str}")
-                else:
-                    # will spam, going to remove it after some time
-                    logger.info("Not enough prana")
-                return
+
+    def craft_items(self) -> None:
+        # if element is here:
+        # click on it and then press on sending godvoice
+        # and then wait as in usual godvoice
+
+        # and don't forget about settings of UI+
+        # (craft enabled, certain combinations)
+
+        # self.driver.uc_click("#voice_submit")
+        # self.driver.reconnect(1)  # wait for response
+        # response = UnderstandResponse(self.driver).understand_response()
+        # self.hero_tracker.register_godvoice(response)
+        # response_text = UnderstandResponse(self.driver).get_response()
+        # logger.info(f"Crafting command executed. Hero {response.name}. {response_text}")
+        ...

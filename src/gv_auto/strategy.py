@@ -2,13 +2,17 @@ import logging
 from gv_auto.environment import EnvironmentInfo
 from gv_auto.hero import HeroActions, HeroTracker
 from gv_auto.logger import setup_logging
-from gv_auto.states import HeroStates, VOICEGOD_TASK, INFLUENCE_TYPE
+from gv_auto.game_info import HeroStates, VOICEGOD_TASK, INFLUENCE_TYPE
 import traceback
 
 setup_logging()
 logger = logging.getLogger(__name__)
 
-BRICK_TOWNS = ["Торгбург", "Снаряжуполь", "Някинск"]
+BRICK_TOWNS = {
+    "Торгбург": 2400,  # 2000-2700
+    "Снаряжуполь": 1500,  # 1000-1700
+    "Някинск": 1500,  # 1000-1700
+}
 MY_GUILD = "Ряды Фурье"
 MAX_GOLD_ZPG_ARENA = 2300
 MIN_PERC_INV_BINGO = 50
@@ -50,7 +54,12 @@ class Strategies:
         if (
             (self.env.prana >= 25)
             and self.env.state_enum
-            not in [HeroStates.FISHING, HeroStates.ADVENTURE, HeroStates.DUEL]
+            not in [
+                HeroStates.FISHING,
+                HeroStates.ADVENTURE,
+                HeroStates.DUEL,
+                HeroStates.UNKNOWN,
+            ]
             and self.env.closest_town not in BRICK_TOWNS
             and self.env.money > 3000
             and self.hero_tracker.is_melting_available
@@ -74,23 +83,27 @@ class Strategies:
             self.hero_tracker.is_godvoice_available
             and (self.env.prana >= MIN_PRANA_DIGGING)
             and (self.env.inventory_perc < 100)
-            and self.env.state_enum in [HeroStates.WALKING, HeroStates.RETURNING]
+            and self.env.state_enum
+            in [HeroStates.WALKING, HeroStates.RETURNING, HeroStates.UNKNOWN]
             and self.env.health_perc < 30  # Don't want to fight with bosses
         ):
             self.hero_actions.godvoice(VOICEGOD_TASK.DIG)
             logger.info("Digging strategy executed.")
 
     def city_travel(self):
+        closest_town = self.env.closest_town
         if (
             self.hero_tracker.is_godvoice_available
             and (self.env.prana >= MIN_PRANA_CITY_TRAVEL)
             and (self.env.state_enum is HeroStates.WALKING)
-            and (self.env.money + self.env.inventory[0] * 50 > 2200)
-            and (self.env.closest_town in BRICK_TOWNS)
+            and (closest_town in BRICK_TOWNS)
+            and (
+                self.env.money + self.env.inventory[0] * 50
+                > BRICK_TOWNS.get(closest_town)
+            )
             and self.hero_tracker.can_return
             # and "(мини)" not in self.env.quest[1]
         ):
-            # добавить счетчик
             self.hero_actions.godvoice(VOICEGOD_TASK.RETURN)
             logger.info("Returning strategy executed.")
 
@@ -99,7 +112,10 @@ class Strategies:
         available_inv_slots = inv_full - inv_cur
         if (
             (self.env.prana >= 50)
-            and (self.env.state_enum not in [HeroStates.FISHING, HeroStates.DUEL])
+            and (
+                self.env.state_enum
+                not in [HeroStates.FISHING, HeroStates.DUEL, HeroStates.UNKNOWN]
+            )
             and (self.env.money < MAX_GOLD_ZPG_ARENA)
             and self.env.is_arena_available(zpg=True)
             and (available_inv_slots >= 3)
@@ -119,15 +135,17 @@ class Strategies:
             and (MY_GUILD not in quest)
             and ("(отменено)" not in quest)
             and (self.env.prana >= 5)
-            and (self.env.state_enum not in [HeroStates.DUEL])
+            and (self.env.state_enum not in [HeroStates.DUEL, HeroStates.UNKNOWN])
         ):
             self.hero_actions.godvoice(VOICEGOD_TASK.CANCEL)
             logger.info("Cancel task strategy executed.")
 
     def open_activatables(self):
         "If there are certain activatable items, we should open them."
-        if self.env.state_enum not in [HeroStates.DUEL]:
+        if self.env.state_enum not in [HeroStates.DUEL, HeroStates.UNKNOWN]:
             self.hero_actions.open_activatables()
 
     def craft_items(self):
         """Crafting items to get certain activatables."""
+        # if enough prana
+        # and crafting available (link text 'ящик')

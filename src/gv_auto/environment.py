@@ -4,13 +4,15 @@ import logging
 import traceback
 from bs4 import BeautifulSoup
 from gv_auto.logger import LogError, setup_logging
-from gv_auto.states import HeroStates, str_state2enum_state
+from gv_auto.game_info import HeroStates, HERO_STATE_STR2ENUM
 
 setup_logging()
 logger = logging.getLogger(__name__)
 
 
 class EnvironmentInfo:
+    # REF: too much scanning, can we cache something?
+    # 1 second memory would be better already, but it can lead to errors
     def __init__(self, driver):
         self.driver = driver
 
@@ -47,7 +49,7 @@ class EnvironmentInfo:
 
     @property
     def state_enum(self) -> HeroStates:
-        return str_state2enum_state.get(self.state, HeroStates.UNKNOWN)
+        return HERO_STATE_STR2ENUM.get(self.state, HeroStates.UNKNOWN)
 
     @property
     def money(self) -> int:
@@ -64,10 +66,11 @@ class EnvironmentInfo:
 
     @property
     def bricks(self) -> int:
-        try:
-            return int(float(self._get_text("#hk_bricks_cnt > div.l_val")[:-1]) * 10)
-        except Exception:
-            return 0
+        selector_bricks = "#hk_bricks_cnt > div.l_val"
+        # or is_element_visible? Don't remember
+        if self.driver.is_element_present(selector_bricks):
+            return int(float(self._get_text(selector_bricks)[:-1]) * 10)
+        return 0
 
     @property
     def health(self) -> tuple[int, int]:
@@ -164,7 +167,7 @@ class EnvironmentInfo:
             current_seconds = current_time.minute * 60 + current_time.second
             offset = 15
             # first 3 minutes of every hour
-            if not (0 + offset // 2 < current_seconds < 180 - offset):
+            if not (0 + offset // 2 < current_seconds < 3 * 60 - offset):
                 return False
         return self.driver.is_link_text_visible("Отправить на арену")
 
@@ -172,6 +175,11 @@ class EnvironmentInfo:
 class DailyUpdate:
     # it looks like a function, but it has a potential I think
     def __init__(self): ...
+
+    # datetime.now(timezone(timedelta(hours=3)))
+    # or
+    # datetime.now(pytz.timezone('Europe/Moscow'))
+    # for Moscow time
 
     @staticmethod
     def get_update_time(offset=0, previous=False) -> datetime:
