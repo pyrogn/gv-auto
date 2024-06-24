@@ -188,7 +188,7 @@ class TimeManager:
         return datetime.now(TIMEZONE)
 
     @classmethod
-    def get_game_refresh_time(cls, offset_min=0, previous=False) -> datetime:
+    def get_game_refresh_time(cls, offset_min: int = 0, previous=False) -> datetime:
         """Get time of next game refresh (map update and bingo reset)."""
         current_time = cls.current_time()
         deadline = current_time.replace(
@@ -211,7 +211,7 @@ class TimeManager:
         return seconds_left_to_deadline / 60 < 120
 
     @classmethod
-    def get_future_time(cls, offset_sec) -> datetime:
+    def get_future_time(cls, offset_sec: int) -> datetime:
         return cls.current_time() + timedelta(seconds=offset_sec)
 
     @classmethod

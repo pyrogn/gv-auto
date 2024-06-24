@@ -24,8 +24,8 @@ logger = logging.getLogger(__name__)
 BINGO_TIMEOUT = 15
 
 
+# need to test extensively these timezones, looks complicated
 class StateManager:
-    # need to test extensively these timezones, looks complicated
     def __init__(self, file_path="hero_tracker_state.json"):
         self.file_path = file_path
         self.default_state = {
@@ -67,6 +67,8 @@ class StateManager:
         state = self._convert_state_times_to_str(state)
         with open(self.file_path, "w") as f:
             json.dump(state, f, indent=4)
+        state = self._convert_state_times_to_datetime(state)
+        return state
 
 
 def sync_bingo_time(method):
@@ -79,7 +81,7 @@ def sync_bingo_time(method):
         if self.state["last_sync_time"] < previous_deadline:
             self.state["bingo_counter"] = 3
             self.state["last_sync_time"] = TimeManager.current_time()
-            self.state_manager.save_state(self.state)
+            self.state = self.state_manager.save_state(self.state)  # can be a decorator
             logger.info("Bingo counter is reset")
         return method(self, *args, **kwargs)
 
@@ -89,7 +91,7 @@ def sync_bingo_time(method):
 def save_state(method):
     def wrapper(self, *args, **kwargs):
         result = method(self, *args, **kwargs)
-        self.state_manager.save_state(self.state)
+        self.state = self.state_manager.save_state(self.state)
         return result
 
     return wrapper
@@ -102,6 +104,7 @@ class HeroTracker:
         self.env = env
         self.state_manager = state_manager
         self.state = self.state_manager.load_state()
+        self.logger = logging.getLogger(__name__)
 
     @property
     def can_return(self) -> bool:
@@ -141,7 +144,7 @@ class HeroTracker:
     @property
     @sync_bingo_time
     def is_bingo_ended(self):
-        return self.state["bingo_counter"] > 0
+        return self.state["bingo_counter"] <= 0
 
     @property
     def is_melting_available(self) -> bool:

@@ -13,6 +13,7 @@
 - [x] ideabox parsing / analyzing / autoclick (won't do)
 - [x] handling errors (screenshot + page_html + log)
 - [x] parsing of response (basic text)
+- [x] refactoring
 - [ ] test returning strategy 100% auto
 - [ ] test activatables opening 100% auto
 - [ ] crafting as a strategy (need manual testing first)
@@ -20,7 +21,6 @@
 - [ ] Saving progress to DB (with what purpose?)
 - [ ] unit tests
 - [ ] decorators for tracking logic (saving, waiting, comparing, syncing)
-- [ ] refactoring
 - [ ] validation of elements in page, if something is wrong - notify (what is it?)
 
 
