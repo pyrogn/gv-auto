@@ -1,8 +1,8 @@
 import logging
-from gv_auto.environment import EnvironmentInfo
+from gv_auto.environment import EnvironmentInfo, TimeManager
 from gv_auto.hero import HeroActions, HeroTracker
 from gv_auto.logger import setup_logging
-from gv_auto.game_info import HeroStates, VOICEGOD_TASK, INFLUENCE_TYPE
+from gv_auto.game_info import FeatureLock, HeroStates, VOICEGOD_TASK, INFLUENCE_TYPE
 import traceback
 
 setup_logging()
@@ -27,16 +27,22 @@ class Strategies:
         self.hero_actions = hero_actions
         self.env = env
         self.hero_tracker = hero_tracker
+        self.feature_lock = FeatureLock(self.env.level)
 
     def check_and_execute(self) -> None:
         basic_strategies = [
             self.melt_bricks,
             self.bingo,
-            self.zpg_arena,
             self.digging,
             self.city_travel,  # test it
             self.open_activatables,  # test it
         ]
+
+        # if self.game_info.is_guild_available:
+        #     basic_strategies.append(self.cancel_leaving_guild)
+        if self.feature_lock.is_zpg_arena_available:
+            basic_strategies.append(self.zpg_arena)
+
         for strategy in basic_strategies:
             try:
                 strategy()
@@ -45,7 +51,7 @@ class Strategies:
                     f"Error in {strategy.__name__} strategy: {e}\n{traceback.format_exc()}"
                 )
 
-        advanced_strategies = [  # noqa: F841
+        to_be_included = [  # noqa: F841
             self.cancel_leaving_guild,
             self.craft_items,
         ]
@@ -74,7 +80,7 @@ class Strategies:
             if self.env.inventory_perc >= MIN_PERC_INV_BINGO:
                 self.hero_actions.play_bingo()
                 logger.info("Bingo strategy executed.")
-            elif self.hero_tracker.bingo_last_call:
+            elif TimeManager.bingo_last_call():
                 self.hero_actions.play_bingo(finish=True)
                 logger.info("Bingo last call strategy executed.")
 
@@ -83,8 +89,7 @@ class Strategies:
             self.hero_tracker.is_godvoice_available
             and (self.env.prana >= MIN_PRANA_DIGGING)
             and (self.env.inventory_perc < 100)
-            and self.env.state_enum
-            in [HeroStates.WALKING, HeroStates.RETURNING, HeroStates.UNKNOWN]
+            and self.env.state_enum in [HeroStates.WALKING, HeroStates.RETURNING]
             and self.env.health_perc < 30  # Don't want to fight with bosses
         ):
             self.hero_actions.godvoice(VOICEGOD_TASK.DIG)

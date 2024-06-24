@@ -3,6 +3,7 @@ import re
 import logging
 import traceback
 from bs4 import BeautifulSoup
+import pytz
 from gv_auto.logger import LogError, setup_logging
 from gv_auto.game_info import HeroStates, HERO_STATE_STR2ENUM
 
@@ -142,6 +143,10 @@ class EnvironmentInfo:
             return 0, ""
 
     @property
+    def level(self) -> int:
+        return int(self._get_re_from_text("#hk_level > div.l_val", r"\d+"))
+
+    @property
     def all_info(self) -> str:
         try:
             if self.state_enum is HeroStates.DUEL:
@@ -172,21 +177,23 @@ class EnvironmentInfo:
         return self.driver.is_link_text_visible("Отправить на арену")
 
 
-class DailyUpdate:
-    # it looks like a function, but it has a potential I think
+TIMEZONE = pytz.timezone("Europe/Moscow")
+
+
+class TimeManager:
     def __init__(self): ...
 
-    # datetime.now(timezone(timedelta(hours=3)))
-    # or
-    # datetime.now(pytz.timezone('Europe/Moscow'))
-    # for Moscow time
-
     @staticmethod
-    def get_update_time(offset=0, previous=False) -> datetime:
-        current_time = datetime.now()
+    def current_time() -> datetime:
+        return datetime.now(TIMEZONE)
+
+    @classmethod
+    def get_game_refresh_time(cls, offset_min=0, previous=False) -> datetime:
+        """Get time of next game refresh (map update and bingo reset)."""
+        current_time = cls.current_time()
         deadline = current_time.replace(
             hour=0, minute=5, second=0, microsecond=0
-        ) + timedelta(minutes=offset)
+        ) + timedelta(minutes=offset_min)
 
         if current_time > deadline:
             deadline += timedelta(days=1)
@@ -196,12 +203,27 @@ class DailyUpdate:
 
         return deadline
 
+    @classmethod
+    def bingo_last_call(cls) -> bool:
+        seconds_left_to_deadline = (
+            cls.get_game_refresh_time() - cls.current_time()
+        ).total_seconds()
+        return seconds_left_to_deadline / 60 < 120
+
+    @classmethod
+    def get_future_time(cls, offset_sec) -> datetime:
+        return cls.current_time() + timedelta(seconds=offset_sec)
+
+    @classmethod
+    def seconds_from_time(cls, time: datetime) -> int:
+        return (cls.current_time() - time).total_seconds()
+
 
 class GameState:
     def __init__(self, driver):
         self.driver = driver
         self.town_map = self._get_town_map()
-        self.next_update_time = DailyUpdate.get_update_time(offset=1)
+        self.next_update_time = TimeManager.get_game_refresh_time(offset_min=1)
 
     def _get_town_map(self) -> dict[int, str]:
         html_content = self.driver.get_page_source()
@@ -221,11 +243,11 @@ class GameState:
         return town_map
 
     def _update_town_map_if_needed(self) -> None:
-        now = datetime.now()
+        now = TimeManager.current_time()
         if now > self.next_update_time:
             logger.info("Updated world map")
             self.town_map = self._get_town_map()
-            self.next_update_time = DailyUpdate.get_update_time(offset=1)
+            self.next_update_time = TimeManager.get_game_refresh_time(offset_min=1)
 
     def find_closest_town(self, position) -> str:
         self._update_town_map_if_needed()

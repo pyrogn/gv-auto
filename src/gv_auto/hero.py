@@ -1,9 +1,10 @@
-from datetime import datetime, timedelta
+from datetime import datetime
 import json
 import random
 import logging
 import re
-from gv_auto.environment import DailyUpdate, EnvironmentInfo
+
+from gv_auto.environment import TIMEZONE, TimeManager, EnvironmentInfo
 from gv_auto.logger import setup_logging
 from gv_auto.response import Responses, UnderstandResponse
 from gv_auto.game_info import (
@@ -23,143 +24,144 @@ logger = logging.getLogger(__name__)
 BINGO_TIMEOUT = 15
 
 
+class StateManager:
+    # need to test extensively these timezones, looks complicated
+    def __init__(self, file_path="hero_tracker_state.json"):
+        self.file_path = file_path
+        self.default_state = {
+            "return_counter": 0,
+            "bingo_counter": 3,
+            "last_bingo_time": datetime(2020, 1, 1, tzinfo=TIMEZONE),
+            "last_melting_time": datetime(2020, 1, 1, tzinfo=TIMEZONE),
+            "last_sync_time": datetime(2020, 1, 1, tzinfo=TIMEZONE),
+            "when_godvoice_available": datetime(2020, 1, 1, tzinfo=TIMEZONE),
+            "quest_n": 0,
+        }
+        self.time_attributes = [
+            "last_bingo_time",
+            "last_melting_time",
+            "last_sync_time",
+            "when_godvoice_available",
+        ]
+
+    def _convert_state_times_to_str(self, state):
+        for key in self.time_attributes:
+            state[key] = state[key].isoformat()
+        return state
+
+    def _convert_state_times_to_datetime(self, state):
+        for key in self.time_attributes:
+            state[key] = datetime.fromisoformat(state[key]).astimezone(TIMEZONE)
+        return state
+
+    def load_state(self):
+        try:
+            with open(self.file_path, "r") as f:
+                state = json.load(f)
+                state = self._convert_state_times_to_datetime(state)
+                return state
+        except (FileNotFoundError, ValueError, KeyError):
+            return self.default_state.copy()
+
+    def save_state(self, state):
+        state = self._convert_state_times_to_str(state)
+        with open(self.file_path, "w") as f:
+            json.dump(state, f, indent=4)
+
+
+def sync_bingo_time(method):
+    def wrapper(self, *args, **kwargs):
+        """If last sync is past deadline, then reset counter."""
+        # with small offset, but previous deadline
+        previous_deadline = TimeManager.get_game_refresh_time(
+            offset_min=2, previous=True
+        )
+        if self.state["last_sync_time"] < previous_deadline:
+            self.state["bingo_counter"] = 3
+            self.state["last_sync_time"] = TimeManager.current_time()
+            self.state_manager.save_state(self.state)
+            logger.info("Bingo counter is reset")
+        return method(self, *args, **kwargs)
+
+    return wrapper
+
+
+def save_state(method):
+    def wrapper(self, *args, **kwargs):
+        result = method(self, *args, **kwargs)
+        self.state_manager.save_state(self.state)
+        return result
+
+    return wrapper
+
+
 class HeroTracker:
     """Tracks available options for a hero (like timeouts and restrictions)."""
 
-    def __init__(self, env: EnvironmentInfo):
+    def __init__(self, env: EnvironmentInfo, state_manager: StateManager):
         self.env = env
-
-        self.return_counter = 0
-        self.bingo_counter = 3
-        self.last_bingo_time = datetime(2020, 1, 1)
-        self.last_melting_time = datetime(2020, 1, 1)
-        self.last_sync_time = datetime(2020, 1, 1)
-        self.when_godvoice_available = datetime(2020, 1, 1)
-        self.quest_n = 0
-
-        self._load_state()
-
-    def _load_state(self):
-        try:
-            with open("hero_tracker_state.json", "r") as f:
-                state = json.load(f)
-                self.return_counter = state["return_counter"]
-                self.bingo_counter = state["bingo_counter"]
-                self.last_bingo_time = datetime.fromisoformat(state["last_bingo_time"])
-                self.last_melting_time = datetime.fromisoformat(
-                    state["last_melting_time"]
-                )
-                self.last_sync_time = datetime.fromisoformat(state["last_sync_time"])
-                self.when_godvoice_available = datetime.fromisoformat(
-                    state["when_godvoice_available"]
-                )
-                self.quest_n = state["quest_n"]
-        except (FileNotFoundError, ValueError, KeyError):
-            pass
-
-    def _save_state(self):
-        state = {
-            "return_counter": self.return_counter,
-            "bingo_counter": self.bingo_counter,
-            "last_bingo_time": self.last_bingo_time.isoformat(),
-            "last_melting_time": self.last_melting_time.isoformat(),
-            "last_sync_time": self.last_sync_time.isoformat(),
-            "when_godvoice_available": self.when_godvoice_available.isoformat(),
-            "quest_n": self.quest_n,
-        }
-        with open("hero_tracker_state.json", "w") as f:
-            json.dump(state, f, indent=4)
+        self.state_manager = state_manager
+        self.state = self.state_manager.load_state()
 
     @property
     def can_return(self) -> bool:
-        # maybe add 6 non working voices in a row
         self.update_return_cnt(self.env.quest[0])
-        return self.return_counter < 2
+        return self.state["return_counter"] < 2
 
+    @save_state
     def register_return(self) -> None:
-        self.return_counter += 1
-        self._save_state()
+        self.state["return_counter"] += 1
 
     def update_return_cnt(self, quest_n: int) -> None:
         # maybe add logic on mini quest (when its done) (it's hard)
-        # how to know if a player has finished a mini quest?
-        if quest_n != self.quest_n:
-            self.return_counter = 0
-            self.quest_n = quest_n
-            self._save_state()
-
-    def _sync_bingo_time(self) -> None:
-        """If last sync is past deadline, then reset counter."""
-        current_time = datetime.now()
-        # with small offset, but previous deadline
-        previous_deadline = DailyUpdate.get_update_time(offset=2, previous=True)
-
-        if self.last_sync_time < previous_deadline:
-            self.bingo_counter = 3
-            self.last_sync_time = current_time
-            self._save_state()
-            logger.info("Bingo counter is reset")
+        # how to know if a player has finished a mini quest and not dropped it?
+        if quest_n != self.state["quest_n"]:
+            self.state["return_counter"] = 0
+            self.state["quest_n"] = quest_n
+            self.state_manager.save_state(self.state)
 
     @property
-    def deadline_bingo(self) -> datetime:
-        current_time = datetime.now()
-        deadline = current_time.replace(hour=0, minute=5, second=0, microsecond=0)
-
-        if current_time > deadline:
-            deadline += timedelta(days=1)
-        return deadline
-
-    @property
-    def bingo_last_call(self) -> bool:
-        current_time = datetime.now()
-
-        seconds_left_to_deadline = (
-            DailyUpdate.get_update_time() - current_time
-        ).total_seconds()
-        return seconds_left_to_deadline / 60 < 120
-
-    @property
+    @sync_bingo_time
     def is_bingo_available(self) -> bool:
-        self._sync_bingo_time()
-
-        return (self.bingo_counter > 0) and (
-            (datetime.now() - self.last_bingo_time).seconds > BINGO_TIMEOUT * 60
+        return (self.state["bingo_counter"] > 0) and (
+            TimeManager.seconds_from_time(self.state["last_bingo_time"])
+            > BINGO_TIMEOUT * 60
         )
 
+    @save_state
     def register_bingo_attempt(self) -> None:
-        self.last_bingo_time = datetime.now()
-        self._save_state()
+        self.state["last_bingo_time"] = TimeManager.current_time()
 
+    @save_state
     def register_bingo_play(self) -> None:
-        if self.bingo_counter <= 0:
+        if self.state["bingo_counter"] <= 0:
             raise ValueError("Bingo counter cannot be less than 0")
-        self.bingo_counter -= 1
-        self._save_state()
+        self.state["bingo_counter"] -= 1
+
+    @property
+    @sync_bingo_time
+    def is_bingo_ended(self):
+        return self.state["bingo_counter"] > 0
 
     @property
     def is_melting_available(self) -> bool:
-        return (datetime.now() - self.last_melting_time).seconds > 20
+        return TimeManager.seconds_from_time(self.state["last_melting_time"]) > 20
 
+    @save_state
     def register_melting(self) -> None:
-        self.last_melting_time = datetime.now()
-        self._save_state()
-
-    @property
-    def is_bingo_ended(self):
-        self._sync_bingo_time()
-        return self.bingo_counter > 0
+        self.state["last_melting_time"] = TimeManager.current_time()
 
     @property
     def is_godvoice_available(self):
-        return datetime.now() > self.when_godvoice_available
+        return TimeManager.current_time() > self.state["when_godvoice_available"]
 
+    @save_state
     def register_godvoice(self, response: Responses):
         match response:
             case Responses.IGNORED:
-                self.when_godvoice_available = datetime.now() + timedelta(seconds=20)
+                self.state["when_godvoice_available"] = TimeManager.get_future_time(20)
             case Responses.RESPONDED:
-                self.when_godvoice_available = datetime.now() + timedelta(seconds=60)
-        self._save_state()
+                self.state["when_godvoice_available"] = TimeManager.get_future_time(60)
 
 
 class HeroActions:
@@ -269,7 +271,9 @@ class HeroActions:
 
                 coupon_selector = "#coupon_b"
                 if self.driver.is_element_clickable(coupon_selector):
+                    coupon_name = re.sub(r"\s+", " ", self.driver.get_text("#cpn_name"))
                     self.driver.uc_click(coupon_selector)
+                    logger.info(f"Got coupon: {coupon_name}")
         finally:
             # come back
             self.driver.uc_open("https://godville.net/superhero")

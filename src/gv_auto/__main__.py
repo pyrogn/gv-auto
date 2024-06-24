@@ -6,7 +6,7 @@ from dotenv import dotenv_values
 from seleniumbase import SB
 from pathlib import Path  # noqa: F401
 from gv_auto.environment import EnvironmentInfo
-from gv_auto.hero import HeroActions, HeroTracker
+from gv_auto.hero import HeroActions, HeroTracker, StateManager
 from gv_auto.logger import LogError, setup_logging
 from gv_auto.game_info import HeroStates
 from gv_auto.strategy import Strategies
@@ -130,7 +130,8 @@ def main(
                 login(sb)
 
                 env = EnvironmentInfo(sb)
-                hero_tracker = HeroTracker(env)
+                state_manager = StateManager()
+                hero_tracker = HeroTracker(env, state_manager)
                 hero_actions = HeroActions(sb, hero_tracker, env)
                 strategies = Strategies(hero_actions, env, hero_tracker)
 
