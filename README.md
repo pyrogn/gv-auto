@@ -37,7 +37,7 @@
 
 Активашки
 ```
-2024-06-25 01:23:14,913 - INFO - I have алоэ веры, class: type-charge-box e_craft_impossible improved, Этот предмет добавляет заряд в прано-аккумулятор (требуется 50% праны), price: 50
+2024-06-25 01:23:14,913 - INFO - I have алоэ веры, class: type-charge-box, Этот предмет добавляет заряд в прано-аккумулятор (требуется 50% праны), price: 50
 2024-06-25 01:23:14,962 - INFO - Activated this item
 2024-06-25 01:23:16,250 - INFO - Hero's response: Внезапно алоэ веры превратило в сияющий синий брикетик, который стремительно унёсся куда-то вверх. Великий тоже собирает кирпичи?
 ```
@@ -69,11 +69,10 @@ ZPG-арена
 
 Бинго
 ```
-2024-06-24 01:11:50,087 - INFO - Осталось игр в бинго: 3
-2024-06-24 01:11:50,744 - INFO - Trying to play bingo and get coupon
-2024-06-24 01:11:52,204 - INFO - Bingo played: Трофеев в инвентаре: 7.
-В бинго можно изъять: стройматериалы для песочного замка.
-2024-06-24 01:11:55,477 - INFO - Bingo strategy executed.
+2024-06-25 10:00:12,277 - INFO - Осталось игр в бинго: 3
+2024-06-25 10:00:12,984 - INFO - Trying to play bingo and get coupon
+2024-06-25 10:00:14,552 - INFO - Bingo played: Трофеев в инвентаре: 6. В бинго можно изъять: распрекраски.
+2024-06-25 10:00:17,210 - INFO - Bingo strategy executed.
 ```
 
 Возврат
@@ -87,10 +86,20 @@ ZPG-арена
 
 ## Краткая статистика
 
+Время жизни:
+
+График изменения, прогноз:
+
+Инвайтов:
+
+Зарядов:
+
+Другов:
+
 ## Это детектируется?
 
 Не так просто как чистый Selenium, но есть зацепки. Источник - https://github.com/kaliiiiiiiiii/brotector
-- Если использовать не на Linux, то детектируется Headless режим [следующим проектом](https://github.com/kaliiiiiiiiii/brotector). На Linux будет использоваться виртуальный дисплей, который не оставляет подобных артефакты для детекции.
+- Если использовать не на Linux, то детектируется Headless режим отсутствием некоторых переменных. На Linux будет использоваться виртуальный дисплей, который не оставляет подобных артефактов для детекции.
 - При взаимодействии с сайтом можно попробовать прочитать переменную `navigator.webdriver`. Во время работы стратегий (это около 2 секунд с перерывом в 10 секунд) данная переменная должна равняться `true`. Если оптимизировать взаимодействие, то все равно при клике на влияния или арену обнажается эта переменная, так как они не кликаются через JS, требуется именно помощь вебдрайвера.
 - Открытие devtools тоже выглядит подозрительно и возможно задетектировать.
 - Поведенческие индикаторы (быстрая реакция, скриптовая реакция на похожие условия).
@@ -115,7 +124,7 @@ ZPG-арена
 
 ## TODO:
 
-- [x] Главный цикл с действиями, разобрать логику
+- [x] Главный цикл с действиями, разобрать **логику**
 - [x] test bingo+coupon strategy 100% auto
 - [x] test gold melting strategy 100% auto
 - [x] test zpg arena strategy 100% auto
@@ -131,15 +140,17 @@ ZPG-арена
 - [x] benchmark parsing, what is faster (from html or seleniumbase)
 - [x] can you detect seleniumbase (headless gets detected by HighEntropyValues)
 - [x] test activatables opening 100% auto
-- [ ] test returning strategy 100% auto
-- [ ] crafting as a strategy (need manual testing first)
+- [x] test returning strategy 100% auto
 - [ ] unit tests
+
+Optional:
+- [ ] crafting as a strategy (need manual testing first)
 - [ ] speed up parsing by parsing from html or some sort of caching (think carefully)
 - [ ] Saving progress to DB (with what purpose?)
 - [ ] validation of elements in page, if something is wrong - notify (what is it?)
 
 
-## small things
+## **small** things
 - timezone GMT+3 always
 - is logging alright?
 - How fast is parsing? Can we cache something to reduce time with ChromeEngine enabled?

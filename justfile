@@ -10,6 +10,10 @@ auto *FLAGS:
 autoview:
     python -m gv_auto --no-sleep --no-headless
 
+# get statistics on bricks
+stats:
+    (cd stats; python parse_bricks_from_log.py; python calc_statistics.py)
+
 # run in manual mode
 man:
     python -m gv_auto --manual
