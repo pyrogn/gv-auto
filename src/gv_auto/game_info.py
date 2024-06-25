@@ -2,6 +2,8 @@ from enum import Enum, auto
 
 
 class HeroStates(Enum):
+    """State of Hero (activity)"""
+
     SLEEPING = auto()
     WALKING = auto()
     RETURNING = auto()
@@ -19,6 +21,8 @@ class HeroStates(Enum):
 
 
 class VOICEGOD_TASK(Enum):
+    """Voicegod task to ask a hero about."""
+
     FIGHT = auto()
     HEAL = auto()
     RETURN = auto()
@@ -27,6 +31,8 @@ class VOICEGOD_TASK(Enum):
 
 
 class INFLUENCE_TYPE(Enum):
+    """Strong influence on a hero"""
+
     ENCOURAGE = auto()
     PUNISH = auto()
 
@@ -84,7 +90,7 @@ USEFUL_AND_FUN_ACTIVATABLES = list(map(get_class_name, all_boxes))
 
 
 class FeatureLock:
-    """Class to understand which features are available for current level."""
+    """Class to understand which features are available for hero's current level."""
 
     def __init__(self, level) -> None:
         self.level = level
