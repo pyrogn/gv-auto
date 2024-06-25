@@ -110,7 +110,6 @@ class HeroTracker:
         self.env = env
         self.state_manager = state_manager
         self.state = self.state_manager.load_state()
-        self.logger = logging.getLogger(__name__)
 
     @property
     def can_return(self) -> bool:

@@ -27,7 +27,7 @@ class EnvironmentInfo:
             logger.error(
                 f"Error retrieving text from {selector}: {e}\n{traceback.format_exc()}"
             )
-            LogError(self.driver).log_error()  # this will spam heavily
+            LogError(self.driver).log_error()
             return ""
 
     def _get_re_from_text(self, selector, regex=r"\d+"):
@@ -40,7 +40,7 @@ class EnvironmentInfo:
             logger.error(
                 f"Error parsing integer from {selector}: {e}. Text: {text}\n{traceback.format_exc()}"
             )
-            LogError(self.driver).log_error()  # this will spam heavily
+            LogError(self.driver).log_error()
             return ""
 
     @property
@@ -116,6 +116,7 @@ class EnvironmentInfo:
             return miles, area
         except Exception as e:
             logger.error(f"Error retrieving position: {e}\n{traceback.format_exc()}")
+            LogError(self.driver).log_error()
             return 0, "Unknown"
 
     @property
