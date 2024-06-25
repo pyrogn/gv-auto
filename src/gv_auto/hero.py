@@ -306,17 +306,25 @@ class HeroActions:
         except Exception:
             logger.info("We got normal arena, didn't we?")
 
+    @staticmethod
+    def get_relevant_class(class_attribute):
+        # Extract the relevant 'type-*' class from the class attribute
+        classes = class_attribute.split()
+        for cls in classes:
+            if cls.startswith("type-"):
+                return cls
+        return None
+
     def open_activatables(self):
         # add smelter and better management with prana
+
         inventory_items = self.driver.find_elements("ul.ul_inv > li")
 
         # REF: might get stale during iteration
         for item in inventory_items:
             class_attribute = item.get_attribute("class")
-            match_good_activatables = any(
-                name in class_attribute for name in USEFUL_AND_FUN_ACTIVATABLES
-            )
-            if match_good_activatables:
+            relevant_class = self.get_relevant_class(class_attribute)
+            if relevant_class in USEFUL_AND_FUN_ACTIVATABLES:
                 item_name = item.find_element(By.TAG_NAME, "span").text
                 title_element = item.find_element(By.CSS_SELECTOR, "div > a")
                 title = title_element.get_attribute("title") if title_element else ""
@@ -334,7 +342,7 @@ class HeroActions:
 
                 if self.env.prana >= prana_price:
                     logger.info(
-                        f"I have {item_name}, class: {class_attribute}, {title}, price: {prana_price}"
+                        f"I have {item_name}, class: {relevant_class}, {title}, price: {prana_price}"
                     )
                     elem_click = item.find_element(By.CSS_SELECTOR, "div > a")
                     elem_click.click()

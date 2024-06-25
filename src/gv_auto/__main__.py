@@ -60,7 +60,6 @@ def routine(sb) -> None:
         logger.info("Closed hint")
 
     validate_url_main_page(sb)
-    # sb.save_screenshot(str(Path("now.png")))
 
 
 def get_random_time_minutes(min, max) -> int:
@@ -91,22 +90,27 @@ def perform_tasks(sb, env: EnvironmentInfo, strategies: Strategies) -> int | Non
 
         match env.state_enum:
             # more rare update
-            case (HeroStates.ADVENTURE, HeroStates.HEALING, HeroStates.PRAYING):
+            case (HeroStates.HEALING, HeroStates.PRAYING, HeroStates.ADVENTURE):
                 sb.reconnect(random.randint(20, 50))
+            # sleep because nothing important will happen in these state
             case HeroStates.DUEL:
+                logger.info("I am in a duel")
                 return get_random_time_minutes(5, 8)
             case HeroStates.LEISURE:
+                logger.info("I am drinking beer")
                 return get_random_time_minutes(10, 20)
             case HeroStates.SLEEPING:
+                logger.info("I am sleeping")
                 return get_random_time_minutes(5, 10)
             case HeroStates.FISHING:
+                logger.info("I am fishing")
                 return get_random_time_minutes(8, 15)
             case HeroStates.UNKNOWN:
                 logger.error("Got an unknown state, where am I?")
                 LogError(sb).log_error()
-            # usual case - disconnect WebDriver for about 10 seconds
+            # usual step - disconnect WebDriver for about 10 seconds
             case _:
-                sb.reconnect(random.randint(5, 12))
+                sb.reconnect(random.randint(7, 12))
 
 
 def main(
