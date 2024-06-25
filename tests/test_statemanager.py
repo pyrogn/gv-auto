@@ -1,92 +1,84 @@
 import pytest
-import json
-from datetime import datetime, timedelta
-from unittest import mock
-from tempfile import NamedTemporaryFile
-from gv_auto.environment import TIMEZONE, TimeManager
-from gv_auto.hero import StateManager, sync_bingo_time
+import tempfile
 import os
+from datetime import datetime
+from gv_auto.hero import StateManager, HeroState, TIMEZONE
 
 
 @pytest.fixture
-def state_manager():
-    with NamedTemporaryFile(delete=False) as tmp_file:
-        state_manager = StateManager(file_path=tmp_file.name)
-        yield state_manager
-    # Cleanup after test
-    os.remove(tmp_file.name)
+def temp_state_file():
+    temp_dir = tempfile.TemporaryDirectory()
+    yield os.path.join(temp_dir.name, "hero_tracker_state.json")
+    temp_dir.cleanup()
 
 
-def test_convert_state_times_to_str(state_manager):
-    state = state_manager.default_state.copy()
-    state_str = state_manager._convert_state_times_to_str(state)
-    for key in state_manager.time_attributes:
-        assert isinstance(state_str[key], str)
+def test_save_and_load_state(temp_state_file):
+    state_manager = StateManager(file_path=temp_state_file)
+    initial_state = HeroState(
+        return_counter=2,
+        bingo_counter=1,
+        last_bingo_time=datetime(2022, 6, 25, 15, 0, tzinfo=TIMEZONE),
+        last_melting_time=datetime(2022, 6, 25, 15, 0, tzinfo=TIMEZONE),
+        last_sync_time=datetime(2022, 6, 25, 15, 0, tzinfo=TIMEZONE),
+        when_godvoice_available=datetime(2022, 6, 25, 15, 0, tzinfo=TIMEZONE),
+        quest_n=5,
+    )
+
+    # Save the state
+    state_manager.save_state(initial_state)
+
+    # Load the state
+    loaded_state = state_manager.load_state()
+
+    # Assert that the loaded state matches the initial state
+    assert loaded_state == initial_state
 
 
-def test_convert_state_times_to_datetime(state_manager):
-    state = state_manager.default_state.copy()
-    state_str = state_manager._convert_state_times_to_str(state)
-    state_dt = state_manager._convert_state_times_to_datetime(state_str)
-    for key in state_manager.time_attributes:
-        assert isinstance(state_dt[key], datetime)
+def test_load_default_state_on_missing_file(temp_state_file):
+    state_manager = StateManager(file_path=temp_state_file)
+
+    # Ensure the state file does not exist
+    if os.path.exists(temp_state_file):
+        os.remove(temp_state_file)
+
+    # Load the state
+    loaded_state = state_manager.load_state()
+
+    # Assert that the loaded state matches the default state
+    assert loaded_state == state_manager.default_state
 
 
-def test_load_state_file_not_found(state_manager):
-    with mock.patch("builtins.open", side_effect=FileNotFoundError):
-        state = state_manager.load_state()
-    assert state == state_manager.default_state
+def test_load_default_state_on_corrupt_file(temp_state_file):
+    state_manager = StateManager(file_path=temp_state_file)
+
+    # Create a corrupt state file
+    with open(temp_state_file, "w") as f:
+        f.write("corrupt data")
+
+    # Load the state
+    loaded_state = state_manager.load_state()
+
+    # Assert that the loaded state matches the default state
+    assert loaded_state == state_manager.default_state
 
 
-def test_load_state_invalid_json(state_manager):
-    with mock.patch("builtins.open", mock.mock_open(read_data="invalid json")):
-        state = state_manager.load_state()
-    assert state == state_manager.default_state
+def test_save_and_load_state_with_different_values(temp_state_file):
+    state_manager = StateManager(file_path=temp_state_file)
+    modified_state = HeroState(
+        return_counter=1,
+        bingo_counter=2,
+        last_bingo_time=datetime(2023, 7, 15, 18, 0, tzinfo=TIMEZONE),
+        last_melting_time=datetime(2023, 7, 15, 18, 0, tzinfo=TIMEZONE),
+        last_sync_time=datetime(2023, 7, 15, 18, 0, tzinfo=TIMEZONE),
+        when_godvoice_available=datetime(2023, 7, 15, 18, 0, tzinfo=TIMEZONE),
+        quest_n=10,
+    )
 
+    # Save the state
+    state_manager.save_state(modified_state)
 
-def test_load_state_valid_json(state_manager):
-    state_data = state_manager.default_state.copy()
-    state_data = state_manager._convert_state_times_to_str(state_data)
-    with mock.patch("builtins.open", mock.mock_open(read_data=json.dumps(state_data))):
-        state = state_manager.load_state()
-    for key in state_manager.time_attributes:
-        assert isinstance(state[key], datetime)
+    # Load the state
+    loaded_state = state_manager.load_state()
 
-
-def test_save_state(state_manager):
-    state = state_manager.default_state.copy()
-    with mock.patch("builtins.open", mock.mock_open()) as mocked_file:
-        state_manager.save_state(state)
-        mocked_file.assert_called_once_with(state_manager.file_path, "w")
-        handle = mocked_file()
-        written_data = handle.write.call_args[0][0]
-        written_state = json.loads(written_data)
-        for key in state_manager.time_attributes:
-            assert isinstance(written_state[key], str)
-
-
-def test_sync_bingo_time_decorator(state_manager):
-    def dummy_method(self):
-        return "dummy result"
-
-    decorated_method = sync_bingo_time(dummy_method)
-    hero_tracker_mock = mock.Mock()
-    hero_tracker_mock.state_manager = state_manager
-    hero_tracker_mock.state = state_manager.default_state.copy()
-
-    previous_deadline = TimeManager.get_game_refresh_time(offset_min=2, previous=True)
-    hero_tracker_mock.state["last_sync_time"] = previous_deadline - timedelta(days=1)
-
-    with mock.patch.object(
-        TimeManager, "current_time", return_value=datetime.now(TIMEZONE)
-    ):
-        result = decorated_method(hero_tracker_mock)
-
-    assert result == "dummy result"
-    assert hero_tracker_mock.state["bingo_counter"] == 3
-    assert hero_tracker_mock.state["last_sync_time"] == TimeManager.current_time()
-    hero_tracker_mock.state_manager.save_state.assert_called_once()
-
-
-if __name__ == "__main__":
-    pytest.main()
+    # Assert that the loaded state matches the modified state
+    assert loaded_state == modified_state

@@ -33,8 +33,8 @@ class Strategies:
         basic_strategies = [
             self.melt_bricks,
             self.bingo,
-            self.city_travel,
-            self.digging,
+            # self.city_travel,
+            # self.digging,
             self.open_activatables,
         ]
 

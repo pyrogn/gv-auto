@@ -48,7 +48,6 @@ def test_return_scenarios(hero_tracker):
 def test_bingo_scenarios(hero_tracker):
     fixed_time = datetime(2023, 6, 25, 23, 0, tzinfo=pytz.utc)
     timeout_duration = timedelta(minutes=BINGO_TIMEOUT_MIN + 1)
-    time_increment = timedelta(minutes=30)
 
     with mock.patch.object(TimeManager, "current_time") as mock_current_time:
         mock_current_time.return_value = fixed_time
