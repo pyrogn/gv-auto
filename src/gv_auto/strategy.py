@@ -134,7 +134,7 @@ class Strategies:
         _, quest = self.env.quest
         if (
             (self.env.state_enum not in [HeroStates.DUEL, HeroStates.UNKNOWN])
-            and ("Стать" in quest)  # verify this, replace with re
+            and ("Стать" in quest)  # TODO: verify this, replace with re
             and ("членом" in quest)
             and (MY_GUILD not in quest)
             and ("(отменено)" not in quest)

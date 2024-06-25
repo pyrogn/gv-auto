@@ -9,9 +9,12 @@ from gv_auto.game_info import HeroStates, HERO_STATE_STR2ENUM
 
 setup_logging()
 logger = logging.getLogger(__name__)
+TIMEZONE = pytz.timezone("Europe/Moscow")
 
 
 class EnvironmentInfo:
+    """Парсинг информации о герое и окружении из главной страницы."""
+
     # REF: too much scanning, can we cache something?
     # 1 second memory would be better already, but it can lead to errors
     def __init__(self, driver):
@@ -177,10 +180,9 @@ class EnvironmentInfo:
         return self.driver.is_link_text_visible("Отправить на арену")
 
 
-TIMEZONE = pytz.timezone("Europe/Moscow")
-
-
 class TimeManager:
+    """Менеджмент времени (обновление игры и задержки для влияний)."""
+
     def __init__(self): ...
 
     @staticmethod

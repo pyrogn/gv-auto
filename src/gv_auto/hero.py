@@ -21,11 +21,13 @@ setup_logging()
 logger = logging.getLogger(__name__)
 
 
-BINGO_TIMEOUT = 15
+BINGO_TIMEOUT_MIN = 15
 
 
-# need to test extensively these timezones, looks complicated
+# I think State should be a dataclass
 class StateManager:
+    """Management of state variables."""
+
     def __init__(self, file_path="hero_tracker_state.json"):
         self.file_path = file_path
         self.default_state = {
@@ -72,6 +74,8 @@ class StateManager:
 
 
 def sync_bingo_time(method):
+    """Check if new bingo is available by time."""
+
     def wrapper(self, *args, **kwargs):
         """If last sync is past deadline, then reset counter."""
         # with small offset, but previous deadline
@@ -89,6 +93,8 @@ def sync_bingo_time(method):
 
 
 def save_state(method):
+    """Save state to a local file."""
+
     def wrapper(self, *args, **kwargs):
         result = method(self, *args, **kwargs)
         self.state = self.state_manager.save_state(self.state)
@@ -116,7 +122,7 @@ class HeroTracker:
         self.state["return_counter"] += 1
 
     def update_return_cnt(self, quest_n: int) -> None:
-        # maybe add logic on mini quest (when its done) (it's hard)
+        # maybe add logic on mini quest (when its done)
         # how to know if a player has finished a mini quest and not dropped it?
         if quest_n != self.state["quest_n"]:
             self.state["return_counter"] = 0
@@ -128,7 +134,7 @@ class HeroTracker:
     def is_bingo_available(self) -> bool:
         return (self.state["bingo_counter"] > 0) and (
             TimeManager.seconds_from_time(self.state["last_bingo_time"])
-            > BINGO_TIMEOUT * 60
+            > BINGO_TIMEOUT_MIN * 60
         )
 
     @save_state
@@ -172,6 +178,8 @@ class HeroTracker:
 
 
 class HeroActions:
+    """Actions available for a hero."""
+
     def __init__(self, driver, hero_tracker: HeroTracker, env: EnvironmentInfo) -> None:
         self.driver = driver
         self.hero_tracker = hero_tracker

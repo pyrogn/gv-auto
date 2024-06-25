@@ -25,7 +25,6 @@ def get_latest_bricks_per_day(log_data):
     df = pd.DataFrame(log_data, columns=["date", "bricks"])
     df = df.groupby("date").last().reset_index()
     df["day"] = np.arange(1, len(df) + 1)
-
     return df[["day", "bricks"]]
 
 

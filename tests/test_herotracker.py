@@ -1,7 +1,13 @@
 import pytest
 from datetime import datetime
 from unittest import mock
-from gv_auto.hero import HeroTracker, StateManager, TimeManager, TIMEZONE, BINGO_TIMEOUT
+from gv_auto.hero import (
+    HeroTracker,
+    StateManager,
+    TimeManager,
+    TIMEZONE,
+    BINGO_TIMEOUT_MIN,
+)
 from gv_auto.environment import EnvironmentInfo
 from gv_auto.response import Responses
 
@@ -54,7 +60,7 @@ def test_update_return_cnt(hero_tracker):
 
 def test_is_bingo_available(hero_tracker):
     with mock.patch.object(
-        TimeManager, "seconds_from_time", return_value=BINGO_TIMEOUT * 60 + 1
+        TimeManager, "seconds_from_time", return_value=BINGO_TIMEOUT_MIN * 60 + 1
     ):
         assert hero_tracker.is_bingo_available
     hero_tracker.state["bingo_counter"] = 0

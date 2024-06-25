@@ -16,6 +16,7 @@ class UnderstandResponse:
         self.driver = driver
 
     def get_response(self) -> str:
+        """Read what's in a diary at and after last influence."""
         responses = []
         for elem in self.driver.find_elements("#diary div.d_msg"):
             if "m_infl" in elem.get_attribute("class"):
@@ -25,6 +26,7 @@ class UnderstandResponse:
         return "|".join(responses)
 
     def understand_response(self) -> Responses:
+        """Determine if hero is reponded after last influence."""
         # maybe we should add validation that we sent some godvoice
         # we assume top messages are more recent (default UI)
         for elem in self.driver.find_elements("#diary div.d_msg"):
@@ -33,9 +35,3 @@ class UnderstandResponse:
             if "➥" in elem.text:
                 return Responses.RESPONDED
         return Responses.IGNORED
-
-
-# maybe:
-# we should add tracking of states (bricks, quests, prana, state)
-# and we'll call it success
-# but it's no use for now, just for easier tracking and reading logs

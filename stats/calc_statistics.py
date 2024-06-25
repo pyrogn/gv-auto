@@ -26,7 +26,7 @@ def plot_progression_of_bricks(df, output_path):
 
 
 def calculate_average_new_bricks(df):
-    df["new_bricks"] = df["bricks"].diff().fillna(0)
+    df["new_bricks"] = df["bricks"].diff().fillna(df["bricks"]).astype(int)
     return df["new_bricks"].mean()
 
 
@@ -149,6 +149,7 @@ def plot_projection_to_1000_bricks(
     plt.title("Projection of When Bricks Count Will Reach 1000")
     plt.xlabel("Day")
     plt.ylabel("Bricks")
+    plt.ylim(0, 1100)
     plt.legend()
     plt.grid(True)
     plt.savefig(output_path)
