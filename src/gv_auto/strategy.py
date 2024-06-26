@@ -1,4 +1,5 @@
 import logging
+import re
 from gv_auto.environment import EnvironmentInfo, TimeManager
 from gv_auto.hero import HeroActions, HeroTracker
 from gv_auto.logger import setup_logging
@@ -15,7 +16,7 @@ BRICK_TOWNS = {
 }
 MY_GUILD = "Ряды Фурье"
 MAX_GOLD_ZPG_ARENA = 2300
-MIN_PERC_INV_BINGO = 50
+MIN_PERC_INV_BINGO = 40
 MIN_PRANA_DIGGING = 55
 MIN_PRANA_CITY_TRAVEL = 30
 
@@ -132,10 +133,10 @@ class Strategies:
 
     def cancel_leaving_guild(self):
         _, quest = self.env.quest
+        regex = r"стать \d+-м членом гильдии «[^»]+»"
         if (
             (self.env.state_enum not in [HeroStates.DUEL, HeroStates.UNKNOWN])
-            and ("Стать" in quest)  # TODO: verify this, replace with re
-            and ("членом" in quest)
+            and re.search(regex, quest)
             and (MY_GUILD not in quest)
             and ("(отменено)" not in quest)
             and (self.env.prana >= 5)

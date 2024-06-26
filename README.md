@@ -20,11 +20,10 @@
 - Воскрешение героя (рутинная операция)
 
 Что не реализовано:
-- Крафт вещей (кнопки появляются благодаря Erinome Godville UI+, и несложно внедрить такую стратегию)
+- Крафт вещей (кнопки появляются благодаря Erinome Godville UI+, и несложно внедрить такую стратегию через поиск, два клика)
 - Активация знаков (непонятно как различать нужные от ненужных)
 - Сброс счетчика разворотов при выполнении мини-квеста (мало встречал, и непонятно, как определить положительное окончание квеста)
-- Быстрый парсинг. Сейчас достаются элементы не из выгруженный html файл, а прямо из страницы. Так сделать легче, так как не думаешь об актуальности html страницы, но так парсинг происходит гораздо медленней (30ms на один элемент через seleniumbase или 0.5ms парсинг html через BeautifulSoup).
-- Возможности выше 12 уровня.
+- Возможности выше 12 уровня (но и до постройки храма вроде ничего нового не появляется).
 - Парсинг астропрогнозов и изменение стратегий (класс определяется расширением UI+).
 - Работа с Верхним Ящиком. LLM пока плоховато разбираются юморе и не могут отличить хорошую от плохой идеи.
 
@@ -151,20 +150,16 @@ ZPG-арена
 Optional:
 - [ ] use headful seleniumbase from docker: `--uc --headed --xvfb`
 - [ ] crafting as a strategy (need manual testing first)
-- [ ] speed up parsing by parsing from html or some sort of caching (think carefully)
+- [x] speed up parsing by parsing from html or some sort of caching (think carefully)
 - [ ] Saving progress to DB (with what purpose?)
 - [ ] validation of elements in page, if something is wrong - notify (what is it?)
 
 
 ## **small** things
-- timezone GMT+3 always
 - is logging alright?
-- How fast is parsing? Can we cache something to reduce time with ChromeEngine enabled?
 - Is bot human enough?
 - How to know if a player has finished a mini quest? What features can we use?
 - some stale element reference error when scanning items. div_link in class of activatable means we can click on @ sign.
-- after transfering to an arena some strategy might be in progress and it won't find element from environment and spam a couple of errors. I need to think about that.
-
 
 ## Заметки
 
@@ -177,7 +172,9 @@ Optional:
   - arena zpg: like normal, then: Ближайшие 1 мин 41 с арена работает в режиме полного ZPG, не позволяя богам влиять на героев. Вы готовы положиться на волю случая?
   - if late: alert closes, some obscure error emerges
 - zpg арена тоже перемещает в Годвилль и выдает 3 предмета, иногда вдобавок кирпич
-
+- mini:
+  - quest:13,стать 325-м членом гильдии «Ряды Фурье»
+  - quest:13,расширить суженого (мини) и следом разрядить ряженого (мини). Как их обрабатывать?
 
 
 

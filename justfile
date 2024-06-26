@@ -30,7 +30,7 @@ CONTAINER_DIR := "/app"
 
 # Build image
 build:
-    docker build -t {{DOCKER_IMAGE}} {{DOCKERFILE_PATH}}
+    docker build --platform linux/amd64 -t {{DOCKER_IMAGE}} {{DOCKERFILE_PATH}}
 
 # Run bot with headed UC mode with virtual monitor in Linux
 autostealth: build

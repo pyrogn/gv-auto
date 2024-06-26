@@ -98,7 +98,7 @@ def perform_tasks(sb, env: EnvironmentInfo, strategies: Strategies) -> int | Non
                 return get_random_time_minutes(5, 8)
             case HeroStates.LEISURE:
                 logger.info("I am drinking beer")
-                return get_random_time_minutes(10, 20)
+                return get_random_time_minutes(5, 10)
             case HeroStates.SLEEPING:
                 logger.info("I am sleeping")
                 return get_random_time_minutes(5, 10)
