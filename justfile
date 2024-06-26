@@ -19,11 +19,10 @@ man:
     python -m gv_auto --manual
 
 # Variables
-DOCKER_USER := "pyrogn"
-IMAGE_NAME := "seleniumbase"
+IMAGE_NAME := "gv-auto"
 TAG := "latest"
 DOCKERFILE_PATH := "."
-DOCKER_IMAGE := DOCKER_USER + "/" + IMAGE_NAME + ":" + TAG
+DOCKER_IMAGE := IMAGE_NAME + ":" + TAG
 CONTAINER_NAME := "seleniumbase_app"
 HOST_DIR := "$(pwd)"
 CONTAINER_DIR := "/app"
@@ -34,15 +33,8 @@ build:
 
 # Run bot with headed UC mode with virtual monitor in Linux
 autostealth: build
-    docker run --platform linux/amd64 -it {{DOCKER_IMAGE}} --name {{CONTAINER_NAME}} -v {{HOST_DIR}}:{{CONTAINER_DIR}} python -m gv_auto --extra-stealth
+    docker run --rm --platform linux/amd64 --name {{CONTAINER_NAME}} -v {{HOST_DIR}}:{{CONTAINER_DIR}} -w {{CONTAINER_DIR}} -it {{DOCKER_IMAGE}} python3 -m gv_auto --extra-stealth
 
-# Clean image
-clean:
-    docker rmi {{DOCKER_IMAGE}}
-
-# Stop and remove the Docker container
-stop:
-    docker stop {{CONTAINER_NAME}}
-    docker rm {{CONTAINER_NAME}}
-
-
+# Run seleniumbase headed in Linux
+stealth *FLAGS: build
+    docker run --rm --platform linux/amd64 --name {{CONTAINER_NAME}} -v {{HOST_DIR}}:{{CONTAINER_DIR}} -w {{CONTAINER_DIR}} -it {{DOCKER_IMAGE}} {{FLAGS}}

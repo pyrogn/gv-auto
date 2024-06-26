@@ -119,19 +119,29 @@ def main(
     sleep: bool = typer.Option(
         True, help="Should script disconnect and sleep for some time."
     ),
+    extra_stealth: bool = typer.Option(
+        False, help="Enable options for linux (must be run from LinuxOS or Docker)"
+    ),
 ):
     headless = False if manual else headless
-
+    common_options = {
+        "uc": True,
+        "user_data_dir": "./chrome_profile",
+        # these options speed up loading
+        "sjw": True,
+        "pls": "none",
+        "ad_block_on": True,
+    }
+    local_config = {
+        "headless2": headless,
+    }
+    linux_config = {"xvfb": True}  # add headed: True ?
+    if not extra_stealth:
+        config = {**local_config, **common_options}
+    else:
+        config = {**linux_config, **common_options}
     while True:
-        with SB(
-            uc=True,
-            headless2=headless,
-            user_data_dir="./chrome_profile",
-            # these options speed up loading
-            sjw=True,
-            pls="none",
-            ad_block_on=True,
-        ) as sb:
+        with SB(**config) as sb:
             try:
                 logger.info("Driver is launched")
 

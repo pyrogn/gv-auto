@@ -211,7 +211,7 @@ class HeroActions:
             text = random.choice(voicegods_map[task])
             self.driver.type("#godvoice", text)
             self.driver.uc_click("#voice_submit")
-            self.driver.reconnect(1)  # wait for response
+            self.driver.reconnect(1.5)  # wait for response
             response = UnderstandResponse(self.driver).understand_response()
             self.hero_tracker.register_godvoice(response)
             logger.info(f"Godvoice command '{text}' executed. Hero {response.name}.")

@@ -4,13 +4,11 @@ FROM pyrogn/seleniumbase:latest
 # Set the working directory inside the container
 WORKDIR /app
 
-COPY pyproject.toml requirements.lock requirements-dev.lock ./
+COPY pyproject.toml requirements.lock requirements-dev.lock README.md ./
 COPY ./src ./src
 
-RUN pip install rye
-RUN rye sync
-
-# COPY . .
+RUN pip install uv
+RUN uv pip install --system -r requirements-dev.lock
 
 # Specify the entrypoint command
-# ENTRYPOINT ["python", "your_script.py"]
+CMD ["/bin/bash"]

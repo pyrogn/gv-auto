@@ -2,7 +2,7 @@ import logging
 import re
 from gv_auto.environment import EnvironmentInfo, TimeManager
 from gv_auto.hero import HeroActions, HeroTracker
-from gv_auto.logger import setup_logging
+from gv_auto.logger import LogError, setup_logging
 from gv_auto.game_info import FeatureLock, HeroStates, VOICEGOD_TASK, INFLUENCE_TYPE
 import traceback
 
@@ -16,7 +16,7 @@ BRICK_TOWNS = {
 }
 MY_GUILD = "Ряды Фурье"
 MAX_GOLD_ZPG_ARENA = 2300
-MIN_PERC_INV_BINGO = 40
+MIN_PERC_INV_BINGO = 50
 MIN_PRANA_DIGGING = 55
 MIN_PRANA_CITY_TRAVEL = 30
 
@@ -31,7 +31,7 @@ class Strategies:
         self.feature_lock = FeatureLock(self.env.level)
 
     def check_and_execute(self) -> None:
-        basic_strategies = [
+        strategies = [
             self.melt_bricks,
             self.bingo,
             # self.city_travel,
@@ -42,15 +42,16 @@ class Strategies:
         # if self.game_info.is_guild_available:
         #     basic_strategies.append(self.cancel_leaving_guild) # test it
         if self.feature_lock.is_zpg_arena_available:
-            basic_strategies.append(self.zpg_arena)
+            strategies.append(self.zpg_arena)
 
-        for strategy in basic_strategies:
+        for strategy in strategies:
             try:
                 strategy()
             except Exception as e:
                 logger.error(
                     f"Error in {strategy.__name__} strategy: {e}\n{traceback.format_exc()}"
                 )
+                LogError(self.env.driver).log_error()
 
         to_be_included = [  # noqa: F841
             self.cancel_leaving_guild,
