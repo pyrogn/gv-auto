@@ -349,15 +349,23 @@ class HeroActions:
                 logger.info(
                     f"I have {item['name']}, class: {item['class']}, {item['title']}, price: {item['prana_price']}"
                 )
-                item_element = self.driver.find_element(
-                    By.CSS_SELECTOR, f"ul.ul_inv > li[class='{item['class']}']"
-                )
-                elem_click = item_element.find_element(By.CSS_SELECTOR, "div > a")
-                elem_click.click()
-                logger.info("Activated this item")
-                self.driver.reconnect(1)
-                response_str = UnderstandResponse(self.driver).get_response()
-                logger.info(f"Hero's response: {response_str}")
+                try:
+                    item_elements = self.driver.find_elements(
+                        By.CSS_SELECTOR, "ul.ul_inv > li"
+                    )
+                    for elem in item_elements:
+                        if elem.find_element(By.TAG_NAME, "span").text == item["name"]:
+                            elem_click = elem.find_element(By.CSS_SELECTOR, "div > a")
+                            elem_click.click()
+                            logger.info("Activated this item")
+                            self.driver.reconnect(1)
+                            response_str = UnderstandResponse(
+                                self.driver
+                            ).get_response()
+                            logger.info(f"Hero's response: {response_str}")
+                            break
+                except Exception:
+                    logger.exception("Error in open_activatables method")
 
     def craft_items(self) -> None:
         # if element is here:

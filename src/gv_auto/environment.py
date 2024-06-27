@@ -345,6 +345,4 @@ class EnvironmentInfo:
                             "prana_price": prana_price,
                         }
                     )
-        if activatables:
-            logger.info(activatables)
         return activatables
