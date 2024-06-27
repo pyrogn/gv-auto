@@ -5,7 +5,11 @@ import traceback
 from bs4 import BeautifulSoup
 import pytz
 from gv_auto.logger import LogError, setup_logging
-from gv_auto.game_info import HeroStates, HERO_STATE_STR2ENUM
+from gv_auto.game_info import (
+    USEFUL_AND_FUN_ACTIVATABLES,
+    HeroStates,
+    HERO_STATE_STR2ENUM,
+)
 
 import time
 from functools import wraps
@@ -65,6 +69,8 @@ class TimeManager:
 
 
 def cache_with_timeout(timeout):
+    """Cache source page and use it for 1 seconds for parsing attributes."""
+
     def decorator(func):
         @wraps(func)
         def wrapper(self, *args, **kwargs):
@@ -82,6 +88,47 @@ def cache_with_timeout(timeout):
     return decorator
 
 
+class GameState:
+    """Game map (towns and their position)."""
+
+    def __init__(self, driver):
+        self.driver = driver
+        self.town_map = self._get_town_map()
+        self.next_update_time = TimeManager.get_game_refresh_time(offset_min=1)
+
+    def _get_town_map(self) -> dict[int, str]:
+        html_content = self.driver.get_page_source()
+        soup = BeautifulSoup(html_content, "html.parser")
+        towns = soup.find_all("g", class_="tl")
+        town_map = {}
+
+        for town in towns:
+            title = town.find("title")
+            if title:
+                town_text = title.get_text()
+                match = re.search(r"(.*?) \((\d+)\)", town_text)
+                if match:
+                    town_name = match.group(1)
+                    miles = int(match.group(2))
+                    town_map[miles] = town_name
+        return town_map
+
+    def _update_town_map_if_needed(self) -> None:
+        now = TimeManager.current_time()
+        if now > self.next_update_time:
+            logger.info("Updated world map")
+            self.town_map = self._get_town_map()
+            self.next_update_time = TimeManager.get_game_refresh_time(offset_min=1)
+
+    def find_closest_town(self, position) -> str:
+        self._update_town_map_if_needed()
+        possible_towns = {k: v for k, v in self.town_map.items() if k <= position}
+        if not possible_towns:
+            return "No towns found in range"
+        closest_distance = max(possible_towns.keys())
+        return possible_towns[closest_distance]
+
+
 class EnvironmentInfo:
     """Парсинг информации о герое и окружении из главной страницы."""
 
@@ -90,6 +137,7 @@ class EnvironmentInfo:
         self._cache = None
         self._cache_time = 0
         self._soup = None
+        self.game_state = GameState(self.driver)
 
     def _get_text(self, selector):
         try:
@@ -179,7 +227,7 @@ class EnvironmentInfo:
     @cache_with_timeout(1)
     def closest_town(self) -> str:
         position, _ = self.position
-        return GameState(self.driver).find_closest_town(position)
+        return self.game_state.find_closest_town(position)
 
     @property
     @cache_with_timeout(1)
@@ -261,41 +309,42 @@ class EnvironmentInfo:
             return False
         return self.driver.is_link_text_visible("Отправить на арену")
 
+    @staticmethod
+    def get_relevant_class(class_attribute):
+        classes = class_attribute
+        for cls in classes:
+            if cls.startswith("type-"):
+                return cls
+        return None
 
-class GameState:
-    def __init__(self, driver):
-        self.driver = driver
-        self.town_map = self._get_town_map()
-        self.next_update_time = TimeManager.get_game_refresh_time(offset_min=1)
-
-    def _get_town_map(self) -> dict[int, str]:
-        html_content = self.driver.get_page_source()
-        soup = BeautifulSoup(html_content, "html.parser")
-        towns = soup.find_all("g", class_="tl")
-        town_map = {}
-
-        for town in towns:
-            title = town.find("title")
-            if title:
-                town_text = title.get_text()
-                match = re.search(r"(.*?) \((\d+)\)", town_text)
-                if match:
-                    town_name = match.group(1)
-                    miles = int(match.group(2))
-                    town_map[miles] = town_name
-        return town_map
-
-    def _update_town_map_if_needed(self) -> None:
-        now = TimeManager.current_time()
-        if now > self.next_update_time:
-            logger.info("Updated world map")
-            self.town_map = self._get_town_map()
-            self.next_update_time = TimeManager.get_game_refresh_time(offset_min=1)
-
-    def find_closest_town(self, position) -> str:
-        self._update_town_map_if_needed()
-        possible_towns = {k: v for k, v in self.town_map.items() if k <= position}
-        if not possible_towns:
-            return "No towns found in range"
-        closest_distance = max(possible_towns.keys())
-        return possible_towns[closest_distance]
+    @property
+    @cache_with_timeout(1)
+    def activatables(self):
+        items = self._soup.select("ul.ul_inv > li")
+        activatables = []
+        for item in items:
+            class_attribute = item.get("class")
+            if class_attribute:
+                relevant_class = self.get_relevant_class(class_attribute)
+                if relevant_class in USEFUL_AND_FUN_ACTIVATABLES:
+                    item_name = item.select_one("span").text
+                    title_element = item.select_one("div > a")
+                    title = title_element.get("title") if title_element else ""
+                    prana_price = None
+                    match = re.search(r"\((.*?)\)", title)
+                    if match:
+                        parentheses_text = match.group(1)
+                        price = re.search(r"\d+", parentheses_text)
+                        prana_price = int(price.group(0)) if price else 0
+                    activatables.append(
+                        {
+                            "item": item,
+                            "name": item_name,
+                            "class": relevant_class,
+                            "title": title,
+                            "prana_price": prana_price,
+                        }
+                    )
+        if activatables:
+            logger.info(activatables)
+        return activatables

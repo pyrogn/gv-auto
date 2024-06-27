@@ -1,5 +1,6 @@
 import logging
 import re
+import time  # noqa: F401
 from gv_auto.environment import EnvironmentInfo, TimeManager
 from gv_auto.hero import HeroActions, HeroTracker
 from gv_auto.logger import LogError, setup_logging
@@ -16,7 +17,7 @@ BRICK_TOWNS = {
 }
 MY_GUILD = "Ряды Фурье"
 MAX_GOLD_ZPG_ARENA = 2300
-MIN_PERC_INV_BINGO = 50
+MIN_PERC_INV_BINGO = 40
 MIN_PRANA_DIGGING = 55
 MIN_PRANA_CITY_TRAVEL = 30
 
@@ -34,19 +35,22 @@ class Strategies:
         strategies = [
             self.melt_bricks,
             self.bingo,
-            # self.city_travel,
-            # self.digging,
-            self.open_activatables,
+            self.city_travel,
+            self.digging,
+            self.open_activatables,  # test it
         ]
 
-        # if self.game_info.is_guild_available:
-        #     basic_strategies.append(self.cancel_leaving_guild) # test it
+        if self.feature_lock.is_guild_available:
+            strategies.append(self.cancel_leaving_guild)  # test it
         if self.feature_lock.is_zpg_arena_available:
             strategies.append(self.zpg_arena)
 
         for strategy in strategies:
             try:
+                # start = time.time()
                 strategy()
+                # end = time.time()
+                # print(f"{strategy.__name__} in {end-start} seconds")
             except Exception as e:
                 logger.error(
                     f"Error in {strategy.__name__} strategy: {e}\n{traceback.format_exc()}"
@@ -54,8 +58,7 @@ class Strategies:
                 LogError(self.env.driver).log_error()
 
         to_be_included = [  # noqa: F841
-            self.cancel_leaving_guild,
-            self.craft_items,
+            self.craft_items,  # test it
         ]
 
     def melt_bricks(self):
@@ -80,12 +83,12 @@ class Strategies:
             self.env.state_enum not in [HeroStates.DUEL]
             and self.hero_tracker.is_bingo_available
         ):
-            if self.env.inventory_perc >= MIN_PERC_INV_BINGO:
-                self.hero_actions.play_bingo()
-                logger.info("Bingo strategy executed.")
-            elif TimeManager.bingo_last_call():
+            if TimeManager.bingo_last_call():
                 self.hero_actions.play_bingo(finish=True)
                 logger.info("Bingo last call strategy executed.")
+            elif self.env.inventory_perc >= MIN_PERC_INV_BINGO:
+                self.hero_actions.play_bingo()
+                logger.info("Bingo strategy executed.")
 
     def digging(self):
         if (

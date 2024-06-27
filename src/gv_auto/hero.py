@@ -258,14 +258,14 @@ class HeroActions:
                 else:
                     logger.info("Bingo element is not clickable")
                     end_bingo_elem = "#bgn_end"
-                    if finish and not self.hero_tracker.is_bingo_ended:
-                        if self.driver.is_element_clickable(end_bingo_elem):
-                            self.driver.uc_click(end_bingo_elem)
-                            logger.info("Finished bingo before end")
-                        else:
-                            logger.error(
-                                "Tried to end bingo, but button isn't clickable"
-                            )
+                if finish and not self.hero_tracker.is_bingo_ended:
+                    if self.driver.is_element_clickable(end_bingo_elem):
+                        self.driver.click(end_bingo_elem)
+                        self.driver.sleep(0.5)
+                        self.driver.accept_alert(2)
+                        logger.info("Finished bingo before end")
+                    else:
+                        logger.error("Tried to end bingo, but button isn't clickable")
 
                 coupon_selector = "#coupon_b"
                 if self.driver.is_element_clickable(coupon_selector):
@@ -307,7 +307,7 @@ class HeroActions:
                 return cls
         return None
 
-    def open_activatables(self):
+    def _open_activatables(self):
         # add smelter and better management with prana
 
         inventory_items = self.driver.find_elements("ul.ul_inv > li")
@@ -342,6 +342,22 @@ class HeroActions:
                     self.driver.reconnect(1)
                     response_str = UnderstandResponse(self.driver).get_response()
                     logger.info(f"Hero's response: {response_str}")
+
+    def open_activatables(self):
+        for item in self.env.activatables:
+            if self.env.prana >= item["prana_price"]:
+                logger.info(
+                    f"I have {item['name']}, class: {item['class']}, {item['title']}, price: {item['prana_price']}"
+                )
+                item_element = self.driver.find_element(
+                    By.CSS_SELECTOR, f"ul.ul_inv > li[class='{item['class']}']"
+                )
+                elem_click = item_element.find_element(By.CSS_SELECTOR, "div > a")
+                elem_click.click()
+                logger.info("Activated this item")
+                self.driver.reconnect(1)
+                response_str = UnderstandResponse(self.driver).get_response()
+                logger.info(f"Hero's response: {response_str}")
 
     def craft_items(self) -> None:
         # if element is here:
