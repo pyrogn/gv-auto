@@ -5,7 +5,6 @@ from gv_auto.environment import EnvironmentInfo, TimeManager
 from gv_auto.hero import HeroActions, HeroTracker
 from gv_auto.logger import LogError, setup_logging
 from gv_auto.game_info import FeatureLock, HeroStates, VOICEGOD_TASK, INFLUENCE_TYPE
-import traceback
 
 setup_logging()
 logger = logging.getLogger(__name__)
@@ -32,12 +31,13 @@ class Strategies:
         self.feature_lock = FeatureLock(self.env.level)
 
     def check_and_execute(self) -> None:
+        """Strategies to add to a list and execute."""
         strategies = [
             self.melt_bricks,
             self.bingo,
             self.city_travel,
             self.digging,
-            self.open_activatables,  # test it
+            self.open_activatables,
         ]
 
         if self.feature_lock.is_guild_available:
@@ -45,17 +45,13 @@ class Strategies:
         if self.feature_lock.is_zpg_arena_available:
             strategies.append(self.zpg_arena)
 
-        for strategy in strategies:
-            try:
-                # start = time.time()
-                strategy()
-                # end = time.time()
-                # print(f"{strategy.__name__} in {end-start} seconds")
-            except Exception as e:
-                logger.error(
-                    f"Error in {strategy.__name__} strategy: {e}\n{traceback.format_exc()}"
-                )
-                LogError(self.env.driver).log_error()
+        if self.env.state_enum is not HeroStates.DUEL:
+            for strategy in strategies:
+                try:
+                    strategy()
+                except Exception:
+                    logger.exception(f"Error in {strategy.__name__} strategy")
+                    LogError(self.env.driver).log_error()
 
         to_be_included = [  # noqa: F841
             self.craft_items,  # test it
@@ -102,7 +98,7 @@ class Strategies:
             logger.info("Digging strategy executed.")
 
     def city_travel(self):
-        closest_town = self.env.closest_town
+        closest_town = self.env.closest_town  # fix this (duel)
         if (
             (self.env.state_enum is HeroStates.WALKING)
             and self.hero_tracker.is_godvoice_available
@@ -121,6 +117,7 @@ class Strategies:
     def zpg_arena(self):
         inv_cur, inv_full = self.env.inventory
         available_inv_slots = inv_full - inv_cur
+        _, quest = self.env.quest  # fix this (duel)
         if (
             (
                 self.env.state_enum
@@ -130,13 +127,14 @@ class Strategies:
             and (self.env.money < MAX_GOLD_ZPG_ARENA)
             and self.env.is_arena_available(zpg=True)
             and (available_inv_slots >= 3)
+            and (("(гильд)" not in quest) and ("(мини)" not in quest))
             and self.env.closest_town not in BRICK_TOWNS
         ):
             self.hero_actions.go_to_zpg_arena()
             logger.info("ZPG arena strategy executed.")
 
     def cancel_leaving_guild(self):
-        _, quest = self.env.quest
+        _, quest = self.env.quest  # fix this
         regex = r"стать \d+-м членом гильдии «[^»]+»"
         if (
             (self.env.state_enum not in [HeroStates.DUEL, HeroStates.UNKNOWN])
@@ -157,3 +155,5 @@ class Strategies:
         """Crafting items to get certain activatables."""
         # if enough prana
         # and crafting available (link text 'ящик')
+        # but I don't see much point in this strategy since it may craft an activatable
+        # that can be opened with 50% prana. And we've got 10 attempts max (usually less).

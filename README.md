@@ -85,9 +85,11 @@ ZPG-арена
 
 ## Краткая статистика
 
-В чистом ZPG-режиме (без скриптом, но с ежедневными посещениями) 1000 кирпичей собирается около года. А бот соберет примерно за 3 месяца.
+В чистом ZPG-режиме (без скриптом, но с ежедневными посещениями) 1000 кирпичей собирается около года. Это 3 кирпича в день (квесты, рыбалка, покупка).
 
-Время жизни: 7 дней
+А бот соберет примерно за 4 месяца.
+
+Время жизни: 10 дней
 
 (3 графика, статистика) из `just stats`
 
@@ -95,7 +97,7 @@ ZPG-арена
 
 Инвайтов + Другов: 8
 
-Дуэлей: 6
+Дуэлей: 14 (соперник находился в 50% отправок на дуэль)
 
 ## Это детектируется?
 
@@ -116,7 +118,7 @@ ZPG-арена
 - Установленный Chrome
 - логин и пароль в `.env` для работы автологина (либо вручную в хроме ввести)
 - Внутри браузера надо вручную установить расширение Erinome Godville UI+, указать нужные настройки крафта
-- `just auto`
+- `just auto` или другие рецепты в `justfile`
 
 ## Особенности
 
@@ -151,7 +153,7 @@ ZPG-арена
 Optional:
 - [x] use headful seleniumbase from docker: `--uc --headed --xvfb`
 - [ ] crafting as a strategy (need manual testing first)
-- [ ] caching in activatables and crafting strategies
+- [x] caching in activatables
 - [x] speed up parsing by parsing from html or some sort of caching (think carefully)
 - [ ] Saving progress to DB (with what purpose?)
 - [ ] validation of elements in page, if something is wrong - notify or drop it
@@ -161,7 +163,6 @@ Optional:
 - is logging alright? I think that we might throw exceptions and catch them at the top.
 - Is bot human enough?
 - How to know if a player has finished a mini quest? What features can we use?
-- some stale element reference error when scanning items. div_link in class of activatable means we can click on @ sign.
 
 ## Заметки
 
