@@ -98,7 +98,7 @@ class Strategies:
             logger.info("Digging strategy executed.")
 
     def city_travel(self):
-        closest_town = self.env.closest_town  # fix this (duel)
+        closest_town = self.env.closest_town
         if (
             (self.env.state_enum is HeroStates.WALKING)
             and self.hero_tracker.is_godvoice_available
@@ -117,7 +117,7 @@ class Strategies:
     def zpg_arena(self):
         inv_cur, inv_full = self.env.inventory
         available_inv_slots = inv_full - inv_cur
-        _, quest = self.env.quest  # fix this (duel)
+        _, quest = self.env.quest
         if (
             (
                 self.env.state_enum

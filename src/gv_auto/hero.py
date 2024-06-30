@@ -222,7 +222,7 @@ class HeroActions:
                 and self.env.state_enum == HeroStates.RETURNING
             ) or (task == VOICEGOD_TASK.CANCEL and "(отменено)" in self.env.quest[1]):
                 self.hero_tracker.register_return()
-                logger.info(f"Return counter: {self.hero_tracker.return_counter}")
+                logger.info(f"Return counter: {self.hero_tracker.state.return_counter}")
 
         except Exception as e:
             logger.error(f"Error in godvoice method: {e}")
