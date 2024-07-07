@@ -61,9 +61,11 @@ ZPG-арена
 
 Плавка кирпичей
 ```
-2024-06-24 08:56:36,828 - INFO - Influence was made with 3 strategy
-2024-06-24 08:56:36,828 - INFO - Influence action 'PUNISH' executed successfully.
-2024-06-24 08:56:36,828 - INFO - Melt bricks strategy executed.
+2024-07-07 22:25:04,276 - INFO - Дорога|money:4084|prana:100|inv:14|bricks:149|hp:100|where:0,В пути|town:Годвилль|quest:32,найти носильщика для серьёзных отношений
+2024-07-07 22:25:04,890 - INFO - Influence was made with 2 strategy
+2024-07-07 22:25:04,890 - INFO - Influence action 'PUNISH' executed successfully.
+2024-07-07 22:25:04,890 - INFO - Melt bricks strategy executed.
+2024-07-07 22:26:06,063 - INFO - Дорога|money:1754|prana:75|inv:14|bricks:150|hp:100|where:1,В пути|town:Годвилль|quest:32,найти носильщика для серьёзных отношений
 ```
 
 Бинго
