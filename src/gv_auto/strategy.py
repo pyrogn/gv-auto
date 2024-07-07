@@ -41,7 +41,7 @@ class Strategies:
         ]
 
         if self.feature_lock.is_guild_available:
-            strategies.append(self.cancel_leaving_guild)  # test it
+            strategies.append(self.cancel_leaving_guild)
         if self.feature_lock.is_zpg_arena_available:
             strategies.append(self.zpg_arena)
 
@@ -109,7 +109,7 @@ class Strategies:
                 > BRICK_TOWNS.get(closest_town)
             )
             and self.hero_tracker.can_return
-            # and "(мини)" not in self.env.quest[1]
+            and "(мини)" not in self.env.quest[1]
         ):
             self.hero_actions.godvoice(VOICEGOD_TASK.RETURN)
             logger.info("Returning strategy executed.")
@@ -134,7 +134,7 @@ class Strategies:
             logger.info("ZPG arena strategy executed.")
 
     def cancel_leaving_guild(self):
-        _, quest = self.env.quest  # fix this
+        _, quest = self.env.quest
         regex = r"стать \d+-м членом гильдии «[^»]+»"
         if (
             (self.env.state_enum not in [HeroStates.DUEL, HeroStates.UNKNOWN])
@@ -142,6 +142,7 @@ class Strategies:
             and (MY_GUILD not in quest)
             and ("(отменено)" not in quest)
             and (self.env.prana >= 5)
+            and self.hero_tracker.can_return
         ):
             self.hero_actions.godvoice(VOICEGOD_TASK.CANCEL)
             logger.info("Cancel task strategy executed.")

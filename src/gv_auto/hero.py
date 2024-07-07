@@ -104,6 +104,7 @@ class HeroTracker:
 
     @save_state
     def register_return(self) -> None:
+        self.update_return_cnt(self.env.quest[0])
         self.state.return_counter += 1
 
     def update_return_cnt(self, quest_n: int) -> None:

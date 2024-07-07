@@ -239,12 +239,14 @@ class EnvironmentInfo:
                 miles = int(re.search(r"\d+", miles).group())
                 area = "В пути"
             else:
-                area = self.driver.get_attribute("g.tl.sl title", "textContent")
+                area = self._soup.select_one("g.tl.sl title").get_text()
                 miles = int(re.search(r"\d+", area).group())
                 area = re.search(r"(.+?)\s*\(", area).group(1)
             return miles, area
-        except Exception as e:
-            logger.error(f"Error retrieving position: {e}\n{traceback.format_exc()}")
+        except Exception:
+            # it will be useful to refresh a page,
+            # because sometimes an error persists (no map literally)
+            logger.exception("Error retrieving position")
             LogError(self.driver).log_error()
             return 0, "Unknown"
 
